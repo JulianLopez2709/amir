@@ -4,9 +4,9 @@ import { Link, Outlet } from "react-router-dom"
 function PublicLayout() {
     return (
         <div className="h-full">
-            <header className="flex justify-between items-center max-w-5xl py-3 m-auto">
-                <div className="flex gap-3">
-                    <p>Logo</p>
+            <header className="flex justify-between items-center max-w-7xl py-3 m-auto">
+                <div className="flex gap-3 items-center">
+                    <h2 className="text-green-700 font-bold text-2xl mr-12">Amir</h2>
                     <p>Planes</p>
                     <p>Contacto</p>
                 </div>
@@ -18,14 +18,16 @@ function PublicLayout() {
 
             <main className=""><Outlet /></main>
 
-            <footer className="max-w-5xl py-3 m-auto">
-                <div className="border-t-2 border-gray-200 py-5">Productos Colombia</div>
-                <div className="w-full flex justify-between items-center border-t-2 border-gray-200 py-5">
-                    <p>
-                    copyright © 2025 Amir proyecto
-                    </p>
-                    <div className="bg-green-200">
-                        <p className="p-5">social media</p>
+            <footer className="max-w-7xl py-3 m-auto border-t-2 border-gray-200">
+                <div className="max-w-5xl m-auto">
+                    <div className="py-5">Productos Colombia</div>
+                    <div className="w-full flex justify-between items-center  py-5">
+                        <p>
+                            copyright © 2025 Amir proyecto
+                        </p>
+                        <div className="bg-green-200">
+                            <p className="p-5">social media</p>
+                        </div>
                     </div>
                 </div>
             </footer>
