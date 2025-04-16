@@ -14,7 +14,7 @@ function ProductsPage() {
     console.log(ordenId)
 
     return (
-        <div className="relative grid lg:grid-cols-[1fr_0.5fr] h-full bg-red-300">
+        <div className="relative grid lg:grid-cols-[1fr_0.5fr] h-full ">
 
             <div className="p-3">
                 <div className="flex justify-between items-center gap-5">
@@ -27,16 +27,18 @@ function ProductsPage() {
                 {
                     //component cards
                 }
-
-                <div className="w-full grid grid-cols-2  xl:grid-cols-3 gap-5">
+                
+                <div className="h-full">
+                <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[88vh] object-cover">
                     {
                         //card product
                     }
                     <CardProduct />
-                    <CardProduct />
-                    <CardProduct />
+                    
 
                 </div>
+                </div>
+                
 
             </div>
 

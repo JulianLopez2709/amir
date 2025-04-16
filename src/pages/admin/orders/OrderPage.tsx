@@ -2,7 +2,6 @@ import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
 import { CircleDollarSign, CreditCard, Printer } from 'lucide-react'
-import React from 'react'
 
 function OrderPage() {
   return (
@@ -56,12 +55,12 @@ function OrderPage() {
           <div className='mb-4'>
             <p className='font-bold'>Metodo de pago</p>
             <div className='flex gap-5'>
-              <div className='p-12 bg-green-100 border border-green-700 rounded-xl'>
-                <CircleDollarSign className='m-auto' />
-              </div>
-              <div className='p-12 border rounded-xl'>
-                <CreditCard className='m-auto' />
-              </div>
+              <Button variant="outline" className='h-full bg-green-100 border border-green-700 rounded-xl hover:bg-green-100'>
+                <CircleDollarSign className='m-auto h-full w-full size-14 p-12 text-green-700' />
+              </Button>
+              <Button variant="outline" className='h-full  border rounded-xl cursor-pointer hover:bg-green-100 hover:border-green-700 hover:text-green-700'>
+                <CreditCard className='m-auto p-12  h-full w-full size-14 ' />
+              </Button>
             </div>
           </div>
 
@@ -70,8 +69,8 @@ function OrderPage() {
             <p>$ 5,665,555</p>
           </div>
 
-          <Button variant="default" className='w-full bg-blue-600 p-7 font-bold mb-3'>Agregar un nuevo Producto</Button>
-          <Button variant="default" className='bg-black text-white p-7 w-full'>
+          <Button variant="default" className='w-full bg-blue-600 p-7 font-bold mb-3 cursor-pointer'>Agregar un nuevo Producto</Button>
+          <Button variant="default" className='bg-black text-white p-7 w-full cursor-pointer'>
             <div>
               <p className='font-bold'>Orden Finalizada</p>
               <p>La orden pasara a finalizada</p>
@@ -80,14 +79,16 @@ function OrderPage() {
         </div>
 
       </div>
-      <div className='grid grid-cols-3 gap-5'>
+      <div className='flex flex-col'>
+        <div className='h-16'>
 
-        <CardOrder />
-        <CardOrder />
-        <CardOrder />
-        <CardOrder />
-        <CardOrder />
+        </div>
+        <div className="grid grid-cols-3 gap-5 h-fit overflow-y-auto scroll-auto max-h-[87vh]">
+          <CardOrder />
+          
+        </div>
       </div>
+
     </div>
   )
 }
