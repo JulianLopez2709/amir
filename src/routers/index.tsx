@@ -4,6 +4,7 @@ import AdminLayout from "../templates/AdminLayout";
 import LandingPage from "../pages/landing/LandingPage";
 import LoginPage from "../pages/auth/LoginPage";
 import ProductsPage from "../pages/admin/products/ProductsPage";
+import OrderPage from "@/pages/admin/orders/OrderPage";
 
 
 const router = createBrowserRouter([
@@ -28,7 +29,7 @@ const router = createBrowserRouter([
             },
             {
                 path : "orders",
-                element : <ProductsPage/>
+                element : <OrderPage/>
             }
         ]   
     },

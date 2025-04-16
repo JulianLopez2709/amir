@@ -1,4 +1,7 @@
+import { Button } from "@/components/ui/button"
+import { House, LogOut, ScrollText, Settings } from "lucide-react"
 import { Link, Outlet } from "react-router-dom"
+
 
 
 function AdminLayout() {
@@ -12,30 +15,37 @@ function AdminLayout() {
                 <div>perfil avatar</div>
             </header>
             <div className="h-screen flex">
-                <nav className="h-full flex-col justify-between border-r-2 border-gray-100">
-                    <div className="p-2">
-                        <div className="bg-[#2CEE12] size-[60px] rounded-2xl opacity-50">
-                        <Link to="/">HOME</Link>
+                <nav className="h-full flex-col justify-between border-r-2 border-gray-100 ">
+                    <div className="p-2  flex flex-col ">
+                        
+                        <Button  className="bg-[#2CEE12] size-[60px] rounded-2xl opacity-50">
+                            <Link to="/admin" className="flex items-center gap-2 py-7">
+                                <House />
+                            </Link>
+                        </Button>
+                        <Button  className="bg-[#12EE96] size-[60px] rounded-2xl opacity-50">
+                            <Link to="/admin/products" className="flex items-center gap-2 py-7">
+                                <p className="font-bold h-full w-full">P</p>
+                            </Link>
+                        </Button>
+                        <Button  className="bg-[#123EEE] size-[60px] rounded-2xl opacity-50">
+                            <Link to="/admin/orders" className="flex items-center gap-2 py-7">
+                                <ScrollText />
+                            </Link>
+                        </Button>
+                        <Button className="bg-[#B012EE] size-[60px] rounded-2xl opacity-50">
+                            <Link to="/admin/settings" className="flex items-center gap-2 py-7">
+                                <Settings />
+                            </Link>
+                        </Button>
 
-                        </div>
-
-                        <div className="bg-[#12EE96] size-[60px] rounded-2xl opacity-50">
-                        <Link to="/">P</Link>
-
-                        </div>
-
-                        <div className="bg-[#123EEE] size-[60px] rounded-2xl opacity-50">
-                        <Link to="/">ORDEN</Link>
-
-                        </div>
-                        <div className="bg-[#B012EE] size-[60px] rounded-2xl opacity-50">
-                        <Link to="/">SETING</Link>
-
-                        </div>
                     </div>
-                    <div className="p-5 w-full bg-green-700">
-                        <Link to="/">OUT</Link>
-                    </div>
+                    <Button className="bg-green-700 hover:bg-green-800 text-white rounded-none">
+                        <Link to="/" className="flex items-center gap-2 py-7">
+                            <LogOut />
+                            <span>Salir</span>
+                        </Link>
+                    </Button>
                 </nav>
                 <main className="bg-[#EFEFEF] h-full w-full"><Outlet /></main>
             </div>

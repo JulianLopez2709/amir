@@ -6,7 +6,7 @@ function PublicLayout() {
         <div className="h-full">
             <header className="flex justify-between items-center max-w-7xl py-3 m-auto">
                 <div className="flex gap-3 items-center">
-                    <h2 className="text-green-700 font-bold text-2xl mr-12">Amir</h2>
+                    <h2 className="text-green-700 font-bold text-2xl mr-12">Amin</h2>
                     <p>Planes</p>
                     <p>Contacto</p>
                 </div>
@@ -23,7 +23,7 @@ function PublicLayout() {
                     <div className="py-5">Productos Colombia</div>
                     <div className="w-full flex justify-between items-center  py-5">
                         <p>
-                            copyright © 2025 Amir proyecto
+                            copyright © 2025 Amin proyecto
                         </p>
                         <div className="bg-green-200">
                             <p className="p-5">social media</p>
