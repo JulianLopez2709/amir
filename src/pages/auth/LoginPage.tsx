@@ -7,7 +7,7 @@ function LoginPage() {
   return (
     <div className="h-screen md:flex">
       <div className="w-96 h-full m-auto flex flex-col items-center justify-center">
-        <h2 className="font-extrabold py-5 text-8xl text-green-700 ">Amir</h2>
+        <h2 className="font-extrabold py-5 text-8xl text-green-700 ">Amim</h2>
         <h1 className="font-bold text-3xl">Ingresa a tu cuenta</h1>
         <h2 className="pb-10 text-xl">Gana tiempo y administra tu empresa.</h2>
         <div className="w-full py-3">
@@ -41,11 +41,11 @@ function LoginPage() {
             Un solo sitio web para <span className="text-green-400 ">controlar</span> tu empresa.
           </h2>
           <p className="mt-4 text-lg text-white w-full text-end opacity-80">
-            Organiza, gestiona y crece con AMIR.
+            Organiza, gestiona y crece con AMIN.
           </p>
         </div>
 
-        <footer className="relative z-10 p-4 text-green-700">© 2025 AMIR</footer>
+        <footer className="relative z-10 p-4 text-green-700">© 2025 AMIN</footer>
       </div>
 
     </div>
