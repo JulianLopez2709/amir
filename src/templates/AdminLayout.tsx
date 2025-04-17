@@ -57,8 +57,8 @@ function AdminLayout() {
                                 <ScrollText />
                             </Button>
                         </Link>
-                        <Link to="/admin/settings" className="size-[60px]">
-                            <Button className={`cursor-pointer w-full h-full rounded-2xl flex items-center justify-center ${isActive('/admin/settings') ? 'bg-[#B012EE] opacity-100' : 'bg-[#B012EE] opacity-50'}`}>
+                        <Link to="/admin/setting" className="size-[60px]">
+                            <Button className={`cursor-pointer w-full h-full rounded-2xl flex items-center justify-center ${isActive('/admin/settings') ? 'bg-purple-700 opacity-100' : 'bg-[#B012EE] opacity-50'}`}>
                                 <Settings />
                             </Button>
                         </Link>

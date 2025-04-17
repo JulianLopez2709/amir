@@ -6,6 +6,7 @@ import LoginPage from "../pages/auth/LoginPage";
 import ProductsPage from "../pages/admin/products/ProductsPage";
 import OrderPage from "@/pages/admin/orders/OrderPage";
 import DashboardPage from "@/pages/admin/dashboard/DashboardPage";
+import SettingPage from "@/pages/admin/settings/SettingPage";
 
 
 const router = createBrowserRouter([
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
             {
                 path : "orders",
                 element : <OrderPage/>
+            },
+            {
+                path : "setting",
+                element : <SettingPage/>
             }
         ]   
     },
