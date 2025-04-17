@@ -1,6 +1,6 @@
 import React from 'react'
 
-function Status({ name = "New", color = "bg-purple" }) {
+function Status({ name = "New", color = "purple" }) {
     const bgColor = `bg-${color}-200`;
     const textColor = `text-${color}-700`;
     return (

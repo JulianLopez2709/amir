@@ -1,38 +1,43 @@
-import React from 'react'
 import Status from './Status'
 import { Button } from '../ui/button'
+import { OrdenReques } from '@/@types/Order'
 
 
-function CardOrder() {
+function CardOrder({ item, onClick }: { item: OrdenReques, onClick: () => void }) {
+
     return (
-        <div className='p-3 bg-white rounded-xl'>
+        <div className='p-3 bg-white rounded-xl cursor-pointer hover:bg-gray-50' onClick={onClick}>
             <div className='flex  justify-between pb-4'>
                 <div className='flex gap-3'>
                     <div className='rounded-full size-10 bg-gray-100'></div>
                     <div>
-                        <p className='font-bold'>Julian David</p>
-                        <p>orden #145236</p>
+                        <p className='font-bold'>{item.cliente_create}</p>
+                        <p>pedido #{item.order}</p>
                     </div>
                 </div>
                 <Status />
             </div>
             <div className='pb-4'>
-                <div className='flex gap-3 px-5'>
-                    <div className='rounded-full size-10 bg-gray-100'></div>
-                    <div>
-                        <p className='font-bold'>Titulo</p>
-                        <p>$2.000</p>
-                    </div>
-                </div>
+                {
+                    item.list_products.map((p) => (
+                        <div className='flex gap-3 px-5'>
+                            <div className='rounded-full size-10 bg-gray-100'></div>
+                            <div>
+                                <p className='font-bold'>{p.product.name}</p>
+                                <p>$2.000</p>
+                            </div>
+                        </div>
+                    ))
+                }
             </div>
             <div>
                 <div className='flex justify-center items-center'>
 
                 </div>
-                <Button variant="default" className='bg-black text-white p-7 w-full'>
+                <Button variant="default" className='bg-black text-white p-7 w-full '>
                     <div>
-                        <p className='font-bold'>Orden Finalizada</p>
-                        <p>La orden pasara a finalizada</p>
+                        <p className='font-bold'>Pedido Finalizada</p>
+                        <p>La pedido pasara a finalizada</p>
                     </div>
                 </Button>
             </div>

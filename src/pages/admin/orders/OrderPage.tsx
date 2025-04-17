@@ -1,15 +1,58 @@
+import { OrdenReques } from '@/@types/Order'
 import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
 import { CircleDollarSign, CreditCard, Printer } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 function OrderPage() {
+  
+
+  const orden: OrdenReques = {
+    cliente_create: "string",
+    order: 145,
+    status: "string",
+    list_products: [],
+    metodo_pago: "string",
+    total_price: 145
+  }
+
+  const orden1: OrdenReques = {
+    cliente_create: "string",
+    order: 1478,
+    status: "string",
+    list_products: [
+      {
+        status: "new",
+        notes: "",
+        quantity: 2,
+        product: {}
+      }
+    ],
+    metodo_pago: "string",
+    total_price: 145
+  }
+
+  const ordenList : OrdenReques[] = [
+    orden,
+    orden1
+  ]
+
+  const [selectOrden, setSelectOrden] = useState<OrdenReques | null>(null)
+
+  const numberOrden = 1457
+
+  const test = (e: string) => {
+    console.log(e)
+  }
+
   return (
     <div className='relative grid lg:grid-cols-[0.4fr_1fr] h-full gap-2'>
       <div className='bg-white p-5' >
         <div className='flex justify-between items-center mb-4'>
           <h2>
-            Orden #4785
+            Pedido #{selectOrden?.order}
           </h2>
           <Status color='green' name='terminado' />
         </div>
@@ -24,7 +67,7 @@ function OrderPage() {
             </div>
           </Button>
         </div>
-        <p className='font-bold'>Orden 1</p>
+        <p className='font-bold'>items 1</p>
         <div>
           <div className='mb-3'>
 
@@ -68,8 +111,9 @@ function OrderPage() {
             <p>Total x2</p>
             <p>$ 5,665,555</p>
           </div>
-
-          <Button variant="default" className='w-full bg-blue-600 p-7 font-bold mb-3 cursor-pointer'>Agregar un nuevo Producto</Button>
+          <Link to={`/admin/products?orden=${numberOrden}`}>
+            <Button variant="default" className='w-full h-full bg-blue-600 p-5 font-bold mb-3 cursor-pointer' >Agregar un nuevo Producto</Button>
+          </Link>
           <Button variant="default" className='bg-black text-white p-7 w-full cursor-pointer'>
             <div>
               <p className='font-bold'>Orden Finalizada</p>
@@ -80,12 +124,19 @@ function OrderPage() {
 
       </div>
       <div className='flex flex-col'>
-        <div className='h-16'>
-
+        <div className='h-16 flex w-full justify-between items-center'>
+          <h2 className='font-bold text-2xl'>Lista de Pedidods</h2>
+          <Link to="/admin/products?orden">
+            <Button variant="default" className='h-full w-full cursor-pointer bg-green-700'>+ Nuevo Pedido</Button>
+          </Link>
         </div>
         <div className="grid grid-cols-3 gap-5 h-fit overflow-y-auto scroll-auto max-h-[87vh]">
-          <CardOrder />
-          
+          {
+            ordenList.map((orden)=>(
+              <CardOrder item={orden} onClick={() => setSelectOrden(orden)} />
+
+            ))
+          }
         </div>
       </div>
 
