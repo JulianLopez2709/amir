@@ -2,9 +2,14 @@ import { useState } from 'react'
 import { Button } from '../ui/button'
 import Product from "@/@types/Product";
 
+type CardProductProps = {
+    product : Product;
+    addClick : (count:number)=>void;
+}
 
-function CardProduct({product,addClick}:{product : Product, addClick : ()=>void}) {
-    const [count, setCount] = useState(0)
+
+function CardProduct({product,addClick}:CardProductProps) {
+    const [count, setCount] = useState(1)
     return (
         <div className="bg-white rounded-2xl flex flex-col p-5" >
             <div className="flex justify-between items-center ">
@@ -30,11 +35,11 @@ function CardProduct({product,addClick}:{product : Product, addClick : ()=>void}
             </div>
             <div className="md:flex w-full items-center justify-between">
                 <div className="w-1/3 flex justify-center items-center bg-green-100 p-1 rounded-sm gap-2 font-bold">
-                    <p className=" p1 px-2 md:px-3 bg-white rounded-sm cursor-pointer" onClick={() => setCount((acount) => acount > 0 ? acount - 1 : acount)}>-</p>
+                    <p className=" p1 px-2 md:px-3 bg-white rounded-sm cursor-pointer" onClick={() => setCount((acount) => acount > 1 ? acount - 1 : acount)}>-</p>
                     <p className="">{count}</p>
                     <p className=" p1 px-2 md:px-3 bg-white rounded-sm cursor-pointer" onClick={() => setCount((acount) => acount + 1)}>+</p>
                 </div>
-                <Button className="bg-green-700 cursor-pointer" variant="default" onClick={addClick}>
+                <Button className="bg-green-700 cursor-pointer" variant="default" onClick={()=>addClick(count)}>
                     <p className='text-sm'>
                         Agregar al carrito
                     </p>

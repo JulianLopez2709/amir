@@ -15,15 +15,17 @@ function CardOrder({ item, onClick }: { item: OrdenReques, onClick: () => void }
                         <p>pedido #{item.order}</p>
                     </div>
                 </div>
-                <Status />
+                <div>
+                    <Status color='red' name='concelado' />
+                </div>
             </div>
             <div className='pb-4'>
                 {
-                    item.list_products.map((p) => (
+                    item.list_products?.map((p) => (
                         <div className='flex gap-3 px-5'>
                             <div className='rounded-full size-10 bg-gray-100'></div>
                             <div>
-                                <p className='font-bold'>{p.product.name}</p>
+                                <p className='font-bold'>{p.product?.name}</p>
                                 <p>$2.000</p>
                             </div>
                         </div>
