@@ -26,7 +26,7 @@ function CardProduct({product,addClick}:CardProductProps) {
             </p>
             <div className="flex justify-between items-end esw">
                 <p className="font-bold text-xl">
-                    <span className="text-sm text-green-700">$</span>{product.price_cost}
+                    <span className="text-sm text-green-700">$</span>{product.price_selling}
                 </p>
 
                 <p className="text-sm  opacity-70">

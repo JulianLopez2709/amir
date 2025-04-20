@@ -2,7 +2,7 @@ type TypeProduct = "Combo" | "Producto" | "Servicio"
 
 interface Product {
     id?: number,
-    type: TypeProduct,
+    type?: TypeProduct,
     name: string,
     description: string,
     price_selling: number,
@@ -11,8 +11,8 @@ interface Product {
     imgUrl?: string,
     barcode ?: number,
     stock_minimo ?: number,
-    avaliable : boolean,
-    is_favorite: boolean,
+    avaliable ?: boolean,
+    is_favorite ?: boolean,
     categoryId ?: number,
     companyId: number
 

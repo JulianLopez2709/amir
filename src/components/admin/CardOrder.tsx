@@ -3,7 +3,7 @@ import { Button } from '../ui/button'
 import { OrdenReques } from '@/@types/Order'
 
 
-function CardOrder({ item, onClick }: { item: OrdenReques, onClick: () => void }) {
+function CardOrder({ item, onClick, index }: { item: OrdenReques, onClick: () => void, index:number }) {
 
     return (
         <div className='p-3 bg-white rounded-xl cursor-pointer hover:bg-gray-50' onClick={onClick}>
@@ -12,11 +12,11 @@ function CardOrder({ item, onClick }: { item: OrdenReques, onClick: () => void }
                     <div className='rounded-full size-10 bg-gray-100'></div>
                     <div>
                         <p className='font-bold'>{item.cliente_create}</p>
-                        <p>pedido #{item.order}</p>
+                        <p>pedido #{index}</p>
                     </div>
                 </div>
                 <div>
-                    <Status color='red' name='concelado' />
+                    <Status color='purple' name={item.status} />
                 </div>
             </div>
             <div className='pb-4'>

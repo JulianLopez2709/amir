@@ -117,8 +117,8 @@ function OrderPage() {
         </div>
         <div className="grid grid-cols-3 gap-5 h-fit overflow-y-auto scroll-auto max-h-[87vh]">
           {
-            listOrder.map((orden) => (
-              <CardOrder item={orden} onClick={() => setSelectOrden(orden)} />
+            listOrder.map((orden,index) => (
+              <CardOrder item={orden} onClick={() => setSelectOrden(orden)} index={index + 1} />
 
             ))
           }

@@ -10,10 +10,10 @@ interface RightPanelProps {
     onClose: () => void;
   }
 
-function RightPanel({ mode,productsAdded }: RightPanelProps) {
+function RightPanel({ mode,productsAdded,setProductsAdded }: RightPanelProps) {
     return (
-        <div className="w-[400px] p-4 bg-white rounded-xl">
-            {mode === 'new-order' && <NewOrderPanel productsAdded={productsAdded} />}
+        <div className="w-full p-4 ">
+            {mode === 'new-order' && <NewOrderPanel productsAdded={productsAdded} setProductsAdded={setProductsAdded} />}
             {mode === 'create-product' && <CreateProductPanel />}
             {mode === 'add-to-order' && <AddToOrderPanel productsAdded={productsAdded} />}
         </div>

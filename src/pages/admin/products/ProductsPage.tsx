@@ -19,8 +19,6 @@ function ProductsPage() {
     const ordenId = searchParams.get("orden");
     const isEditingOrder = Boolean(ordenId);
 
-    console.log(ordenId)
-
     const [modePanelRight, setModePanelRight] = useState<PanelMode>('new-order')
     const [shoppingCart, setShoppingCart] = useState(false)
     const [listProductsAdded, setListProductsAdded] = useState<newProductToOrder[]>([])
@@ -99,7 +97,7 @@ function ProductsPage() {
                 </div>
             </div>
 
-            <div className={`${shoppingCart ? "flex" : "hidden"} top-0 lg:flex lg:right-0 bg-white h-full flex-col justify-center items-center p-7`}>
+            <div className={`${shoppingCart ? "flex" : "hidden"} top-0 lg:flex lg:right-0 bg-white h-full flex-col py-3 px-7`}>
                 <RightPanel
                     mode={modePanelRight}
                     productsAdded={listProductsAdded}
