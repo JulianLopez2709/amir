@@ -1,43 +1,24 @@
 import { OrdenReques } from '@/@types/Order'
+import { getAllOrdersByCompany } from '@/api/order/getAllOrdersByCompany'
 import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
 import { CircleDollarSign, CreditCard, Printer } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 function OrderPage() {
+  useEffect( () =>{
+    async function fetchData() {
+      const response = await getAllOrdersByCompany(1)
+      setListOrder(response)
+    }
+    fetchData()
+  },[])
 
-
-  const orden: OrdenReques = {
-    cliente_create: "string",
-    order: 145,
-    status: "string",
-    list_products: [],
-    metodo_pago: "string",
-    total_price: 145
-  }
-
-  const orden1: OrdenReques = {
-    cliente_create: "Julian David Lopez",
-    order: 1478,
-    status: "string",
-    list_products: [
-      {
-        status: "new",
-        notes: "",
-        quantity: 2,
-      }
-    ],
-    metodo_pago: "string",
-    total_price: 145
-  }
-
-  const ordenList: OrdenReques[] = [
-    orden,
-    orden1
-  ]
-
+  const[ listOrder , setListOrder] = useState<OrdenReques[]>([])
+  
+  
   const [selectOrden, setSelectOrden] = useState<OrdenReques | null>(null)
   const [detail, setDetail] = useState(false)
   const showDetail = () => {
@@ -46,12 +27,12 @@ function OrderPage() {
 
   const numberOrden = 1457
 
-  
+
 
   return (
     <div className='relative grid lg:grid-cols-[0.4fr_1fr] h-full gap-2'>
-      <div className='h-screen w-full'>
-        <div className=' w-full bg-white p-5 h-full' >
+      <div className=' h-screen w-full'>
+        <div className='w-full bg-white p-5 h-full' >
           <div className={`lg:hidden cursor-pointer`} onClick={showDetail}>
             close
           </div>
@@ -72,32 +53,27 @@ function OrderPage() {
               </div>
             </Button>
           </div>
-          <p className='font-bold'>items 1</p>
+          <p className='font-bold'>items {selectOrden?.products?.length}</p>
           <div>
             <div className='mb-3'>
 
               <div className="flex flex-col w-full mb-3">
-                <div className="flex justify-between items-center">
-                  <div className="size-10 bg-gray-200"></div>
-                  <div>
-                    <p>titulo</p>
-                    <p>Descripton</p>
-                  </div>
-                  <p>1</p>
-                  <p>$2,000,120</p>
-                </div>
+                {
+                  selectOrden?.products?.map((p) => (
+                    <div className="flex justify-between items-center">
+                      <div className="size-10 bg-gray-200"></div>
+                      <div>
+                        <p>{p.product?.name}</p>
+                        <p>Descripton</p>
+                      </div>
+                      <p>{p.quantity}</p>
+                      <p>${p.product?.price_selling}</p>
+                    </div>
+                  ))
+                }
+
               </div>
-              <div className="flex flex-col w-full mb-3">
-                <div className="flex justify-between items-center">
-                  <div className="size-10 bg-gray-200"></div>
-                  <div>
-                    <p>titulo</p>
-                    <p>Descripton</p>
-                  </div>
-                  <p>1</p>
-                  <p>$2,000,120</p>
-                </div>
-              </div>
+
             </div>
 
             <div className='mb-4'>
@@ -114,7 +90,7 @@ function OrderPage() {
 
             <div className='flex justify-between items-center font-bold'>
               <p>Total x2</p>
-              <p>$ 5,665,555</p>
+              <p>$ {selectOrden?.total_price}</p>
             </div>
             <Link to={`/admin/products?orden=${numberOrden}`}>
               <Button variant="default" className='w-full h-full bg-blue-600 p-5 font-bold mb-3 cursor-pointer' >Agregar un nuevo Producto</Button>
@@ -141,7 +117,7 @@ function OrderPage() {
         </div>
         <div className="grid grid-cols-3 gap-5 h-fit overflow-y-auto scroll-auto max-h-[87vh]">
           {
-            ordenList.map((orden) => (
+            listOrder.map((orden) => (
               <CardOrder item={orden} onClick={() => setSelectOrden(orden)} />
 
             ))
