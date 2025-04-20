@@ -27,6 +27,11 @@ interface Orden{
     
 }
 
+export interface createOrderBody{
+    total_price: number,
+    companyId: number,
+    products: Product_Orden[]
+}
 
 export interface newProductToOrder {
     product: Product,
