@@ -21,12 +21,12 @@ function CardOrder({ item, onClick }: { item: OrdenReques, onClick: () => void }
             </div>
             <div className='pb-4'>
                 {
-                    item.list_products?.map((p) => (
+                    item.products?.map((p) => (
                         <div className='flex gap-3 px-5'>
                             <div className='rounded-full size-10 bg-gray-100'></div>
                             <div>
                                 <p className='font-bold'>{p.product?.name}</p>
-                                <p>$2.000</p>
+                                <p>${p.product?.price_cost}</p>
                             </div>
                         </div>
                     ))

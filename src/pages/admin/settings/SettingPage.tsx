@@ -6,8 +6,8 @@ import React from 'react'
 function SettingPage() {
 
     return (
-        <div>
-            <div>
+        <div className='p-2'>
+            <div className='bg-white max-w-4xl p-3 rounded-sm'>
                 <div className='flex'>
                     <div>
                         <p>logo del Negocio</p>
@@ -27,8 +27,13 @@ function SettingPage() {
                     <Input placeholder='' />
                 </div>
                 <div>
-                    Brand
-                    <Select >
+                    Brand <input type="color" />
+                    
+
+                </div>
+                <div className='flex'>
+                        <p>Tipo </p>
+                <Select >
                         <SelectTrigger className="bg-white rounded-sm border-2 w-[180px]">
                             <SelectValue placeholder="Theme" />
                         </SelectTrigger>
@@ -38,7 +43,6 @@ function SettingPage() {
                             <SelectItem value="system">System</SelectItem>
                         </SelectContent>
                     </Select>   
-
                 </div>
             </div>
         </div>
