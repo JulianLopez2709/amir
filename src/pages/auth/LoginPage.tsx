@@ -7,7 +7,7 @@ function LoginPage() {
   return (
     <div className="h-screen md:flex">
       <div className="w-96 h-full m-auto flex flex-col items-center justify-center">
-        <h2 className="font-extrabold py-5 text-8xl text-green-700 ">Amim</h2>
+        <h2 className="font-extrabold py-5 text-8xl text-green-700 ">Amin</h2>
         <h1 className="font-bold text-3xl">Ingresa a tu cuenta</h1>
         <h2 className="pb-10 text-xl">Gana tiempo y administra tu empresa.</h2>
         <div className="w-full py-3">

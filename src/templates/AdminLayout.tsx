@@ -31,7 +31,7 @@ function AdminLayout() {
         <div className="h-screen flex flex-col">
             <header className="border-b-2 border-gray-100 p-2 md:p-5 flex justify-between items-center">
                 <div className="flex text-2xl gap-5 ">
-                    <div className="w-10 h-5 text-green-700 font-bold mr-2">AMIR</div>
+                    <div className="w-10 h-5 text-green-700 font-bold mr-2">AMIN</div>
                     <p className="font-bold">{getSectionTitle()}</p>
                 </div>
                 <Avatar>
