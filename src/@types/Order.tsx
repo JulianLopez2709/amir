@@ -6,9 +6,10 @@ export interface OrdenReques{
     cliente_create : string,
     order : number,
     status : string,
-    list_products ?: Product_Orden[],
-    metodo_pago : string,
+    products ?: Product_Orden[],
+    //metodo_pago : string,
     total_price : number
+    createAt : string,
 }
 
 export interface Product_Orden{
@@ -16,6 +17,7 @@ export interface Product_Orden{
     status : Status,
     notes : string,
     quantity : number
+    productId ?: number
 }
 
 interface Orden{
@@ -23,6 +25,12 @@ interface Orden{
     total_price:number,
     status : Status
     
+}
+
+
+export interface newProductToOrder {
+    product: Product,
+    acount: number
 }
 
 export default Orden;
