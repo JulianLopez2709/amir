@@ -1,12 +1,12 @@
 export type TypeUser = "admin" | "asesor"
 
 interface User {
-    id: number,
+    id?: number,
     name: string,
     email: string,
     username: string,
-    address: string,
-    telefon: string
+    address?: string,
+    telefon?:string
     rol : TypeUser
 }
 

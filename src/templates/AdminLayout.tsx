@@ -8,7 +8,7 @@ function AdminLayout() {
     const location = useLocation()
 
     const getSectionTitle = () => {
-        switch(location.pathname) {
+        switch (location.pathname) {
             case '/admin':
                 return 'Inicio'
             case '/admin/products':
@@ -42,7 +42,7 @@ function AdminLayout() {
             <div className="flex-1 flex overflow-hidden">
                 <nav className="flex flex-col justify-between border-r-2 border-gray-100 ">
                     <div className="p-1 md:p-2 flex flex-col gap-y-3">
-                    <Link to="/admin" className="size-[60px]">
+                        <Link to="/admin" className="size-[60px]">
                             <Button className={`cursor-pointer w-full h-full rounded-2xl flex items-center justify-center ${isActive('/admin') ? 'bg-[#2CEE12] opacity-100' : 'bg-[#2CEE12] opacity-50'}`}>
                                 <House />
                             </Button>

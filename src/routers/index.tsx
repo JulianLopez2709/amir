@@ -8,46 +8,52 @@ import OrderPage from "@/pages/admin/orders/OrderPage";
 import DashboardPage from "@/pages/admin/dashboard/DashboardPage";
 import SettingPage from "@/pages/admin/settings/SettingPage";
 import CreateCompany from "@/pages/admin/company/CreateCompany";
-
+import ProtectRoute from "@/components/ProtectRoute";
 
 const router = createBrowserRouter([
     {
-        path : "/",
-        element : <PublicLayout />,
-        children : [
-            {index:true,element:<LandingPage/>}
+        path: "/",
+        element: <PublicLayout />,
+        children: [
+            { index: true, element: <LandingPage /> }
         ]
     },
     {
-        path : "/auth",
-        element : <LoginPage/>
+        path: "/auth",
+        element: <LoginPage />
     },
     {
-        path : "/admin",
-        element : <AdminLayout />,
-        children : [
+        element: <ProtectRoute isAllow  />,
+        children: [
             {
-                index:true,element:<DashboardPage/>
+                path: "/admin",
+                element: <AdminLayout />,
+                children:[
+                    {
+                        index: true, element: <DashboardPage />
+                    },
+                    {
+                        path: "/products",
+                        element: <ProductsPage />
+                    },
+                    {
+                        path: "/orders",
+                        element: <OrderPage />
+                    },
+                    {
+                        path: "/setting",
+                        element: <SettingPage />
+                    }
+                ]
             },
             {
-                path : "products",
-                element : <ProductsPage/>
-            },
-            {
-                path : "orders",
-                element : <OrderPage/>
-            },
-            {
-                path : "setting",
-                element : <SettingPage/>
+                path: "/createCompany",
+                element: <CreateCompany />,
+                index: true,
             }
-        ]   
+        ]
     },
-    {
-        path: "/createCompany",
-        element: <CreateCompany />,
-        index: true,
-    }
+    
 ])
 
 export default router;

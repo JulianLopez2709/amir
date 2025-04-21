@@ -1,36 +1,71 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import './index.css'
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom"
+
+import PublicLayout from "./templates/PublicLayout"
+import AdminLayout from "./templates/AdminLayout"
+import LandingPage from "./pages/landing/LandingPage"
+import LoginPage from "./pages/auth/LoginPage"
+import ProductsPage from "./pages/admin/products/ProductsPage"
+import OrderPage from "./pages/admin/orders/OrderPage"
+import DashboardPage from "./pages/admin/dashboard/DashboardPage"
+import SettingPage from "./pages/admin/settings/SettingPage"
+import CreateCompany from "./pages/admin/company/CreateCompany"
+import ProtectRoute from "./components/ProtectRoute"
 import './App.css'
-import { Button } from './components/ui/button'
+import User from './@types/User'
+
+
+const user: User = {
+  id: 1,
+  name: "Julián López",
+  email: "julian@example.com",
+  username: "julian_dev",
+  rol: "admin", // o el enum que estés usando
+}
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <Button variant="outline" onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </Button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <BrowserRouter>
+      <Routes>
+
+        {/* Rutas públicas */}
+        <Route element={<PublicLayout />}>
+          <Route index element={<LandingPage />} />
+        </Route>
+
+        {/* Página de login */}
+        <Route path="/auth" element={<LoginPage />} />
+
+        {/* Rutas protegidas */}
+        <Route element={<AdminLayout />} >
+          <Route element={<ProtectRoute isAllow={!!user} />}>
+            <Route path="/admin/products" element={<ProductsPage />} />
+            <Route path="/admin/orders" element={<OrderPage />} />
+          </Route>
+          <Route element={<ProtectRoute isAllow={!!user && user.rol == "admin"} redirectTo="/admin/products"/>} >
+            <Route path="/admin" index element={<DashboardPage />} />
+            <Route path="/admin/setting" element={<SettingPage />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectRoute isAllow={!!user} />}>
+          <Route path="/createCompany" element={<CreateCompany />} />
+        </Route>
+
+
+        {/* Redirección si no encuentra la ruta */}
+        <Route path="*" element={<Navigate to="/" />} />
+
+      </Routes>
+    </BrowserRouter>
   )
 }
 
 export default App
+
