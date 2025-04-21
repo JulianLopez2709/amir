@@ -89,8 +89,10 @@ function ProductsPage() {
                     <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[88vh] object-cover">
                         {
                             //un for de la respuesta a la apicard product
-                            listProduct.map((product) => (
-                                <CardProduct product={product} addClick={(count) => addNewProduct(product, count)} />
+                            listProduct.map((product,index) => (
+                                <li key={index} className="flex justify-center items-center ">
+                                    <CardProduct product={product} addClick={(count) => addNewProduct(product, count)}  index={index} />
+                                </li>
                             ))
                         }
                     </div>

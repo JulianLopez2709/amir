@@ -118,7 +118,9 @@ function OrderPage() {
         <div className="grid grid-cols-3 gap-5 h-fit overflow-y-auto scroll-auto max-h-[87vh]">
           {
             listOrder.map((orden,index) => (
+              <li key={index} className='list-none'>
               <CardOrder item={orden} onClick={() => setSelectOrden(orden)} index={index + 1} />
+              </li>
 
             ))
           }

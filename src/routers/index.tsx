@@ -7,6 +7,7 @@ import ProductsPage from "../pages/admin/products/ProductsPage";
 import OrderPage from "@/pages/admin/orders/OrderPage";
 import DashboardPage from "@/pages/admin/dashboard/DashboardPage";
 import SettingPage from "@/pages/admin/settings/SettingPage";
+import CreateCompany from "@/pages/admin/company/CreateCompany";
 
 
 const router = createBrowserRouter([
@@ -42,7 +43,11 @@ const router = createBrowserRouter([
             }
         ]   
     },
-    
+    {
+        path: "/createCompany",
+        element: <CreateCompany />,
+        index: true,
+    }
 ])
 
 export default router;

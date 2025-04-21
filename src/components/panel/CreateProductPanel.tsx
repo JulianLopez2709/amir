@@ -32,7 +32,7 @@ function CreateProductPanel() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (product.price_cost < product.price_selling) {
+        if (product.price_cost > product.price_selling) {
             toast("Error al crear producto", {
                 description: <p className='text-white'>El precio de costo no puede ser menor al precio de venta</p>,
                 duration: 3000,
@@ -61,7 +61,7 @@ function CreateProductPanel() {
                 description: '',
                 price_selling: 0,
                 price_cost: 0,
-                barcode: undefined,
+                barcode: 0,
                 companyId: 1,
                 imgUrl: undefined,
                 stock_minimo: undefined,

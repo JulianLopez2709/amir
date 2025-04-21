@@ -14,7 +14,7 @@ function LandingPage() {
                         <h1 className="text-2xl pb-3 opacity-80">Software de gestion de producto y ventas.</h1>
                         <h2 className="text-4xl font-bold pb-3">Haz que todo sea mas <span className="text-green-500">facil y mas rapido</span> si tu factura la tienes en tu telefono <span>Admin</span></h2>
                         <h2 className="text-xl pb-3 pr-7">Con Amin vendes y gestiona tu productos de una forma facil y sencilla</h2>
-                        <Button className="text-2xl bg-green-700 p-5 mb-3 opacity-80 "><Link to="/auth">Empieza negocio gratis</Link></Button>
+                        <Button className="text-2xl bg-green-700 p-5 mb-3 opacity-80 "><Link to="/createCompany">Empieza negocio gratis</Link></Button>
                         <p>✅ Factura electronica.</p>
                     </div>
                     <div className="hidden md:flex relative bg-gray-100 w-[50%] h-[460px] rounded-2xl overflow-hidden">
