@@ -12,7 +12,7 @@ interface RightPanelProps {
 
 function RightPanel({ mode,productsAdded,setProductsAdded }: RightPanelProps) {
     return (
-        <div className="w-full p-4 ">
+        <div className="w-full p-4 h-full">
             {mode === 'new-order' && <NewOrderPanel productsAdded={productsAdded} setProductsAdded={setProductsAdded} />}
             {mode === 'create-product' && <CreateProductPanel />}
             {mode === 'add-to-order' && <AddToOrderPanel productsAdded={productsAdded} />}
