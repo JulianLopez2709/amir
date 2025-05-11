@@ -73,25 +73,25 @@ function ProductsPage() {
         <div className="relative grid lg:grid-cols-[1fr_0.5fr] h-full ">
 
             <div className="md:p-3">
-                <div className="flex justify-between items-center gap-5">
-                    <div className="p-2 rounded-2xl bg-green-700 text-white">Filter</div>
-                    <Input className="bg-white p-2 text-2xl" placeholder="Busca producto por el nombre o el codigo." />
+                <div className="flex justify-between items-center gap-5 mb-2">
+                    <div className="p-2 rounded-sm bg-green-700 text-white">Filter</div>
+                    <Input className="bg-white p-2 text-sm md:text-xl" placeholder="Busca producto por el nombre o el codigo." />
                     {
                         typeuser == "admin" ? (
                             <Button className="border border-green-700 bg-white text-green-700 cursor-pointer" variant="outline" onClick={newProductClick}>+ Nuevo Producto</Button>
                         ) : (null)
                     }
-                    <Button className={`lg:hidden bg-yellow-700`} onClick={showDetail}><ShoppingCart className="h-10 w-10 text-white" /></Button>
+                    <Button className={`lg:hidden bg-yellow-700 cursor-pointer`} onClick={showDetail}><ShoppingCart className="h-10 w-10 text-white" /></Button>
                 </div>
 
-                { /*component cards*/ }
+                { /*component cards*/}
                 <div className="h-full">
-                    <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[88vh] object-cover">
+                    <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh]  md:max-h-[85vh] object-cover">
                         {
                             //un for de la respuesta a la apicard product
-                            listProduct.map((product,index) => (
+                            listProduct.map((product, index) => (
                                 <li key={index} className="flex justify-center items-center ">
-                                    <CardProduct product={product} addClick={(count) => addNewProduct(product, count)}  index={index} />
+                                    <CardProduct product={product} addClick={(count) => addNewProduct(product, count)} index={index} />
                                 </li>
                             ))
                         }
@@ -99,7 +99,15 @@ function ProductsPage() {
                 </div>
             </div>
 
-            <div className={`${shoppingCart ? "flex" : "hidden"} top-0 lg:flex lg:right-0 bg-white h-full flex-col py-3 px-7`}>
+            <div className={`
+                    fixed z-50 
+                    ${shoppingCart ? "flex" : "hidden"} 
+                    right-0 
+                    h-[95vh] w-full 
+                    flex-col bg-white 
+                    py-2 px-2 lg:px-7 
+                    lg:static lg:flex lg:w-auto lg:h-auto
+                `}>
                 <RightPanel
                     mode={modePanelRight}
                     productsAdded={listProductsAdded}
@@ -107,7 +115,7 @@ function ProductsPage() {
                     onClose={() => setShoppingCart(false)}
                 />
             </div>
-        </div>
+        </div >
     )
 }
 

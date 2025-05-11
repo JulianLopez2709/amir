@@ -19,7 +19,7 @@ function CardOrder({ item, onClick, index }: { item: OrdenReques, onClick: () =>
                     <Status color='purple' name={item.status} />
                 </div>
             </div>
-            <div className='pb-4'>
+            <div className='pb-4 flex flex-col gap-2'>
                 {
                     item.products?.map((p, index) => (
                         <div className='flex gap-3 px-5' key={index}>

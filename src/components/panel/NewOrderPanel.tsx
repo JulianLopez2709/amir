@@ -85,7 +85,7 @@ function NewOrderPanel(
                     }
 
                 </div>
-                <div className="flex justify-center items-center h-full w-full bg-gray-200">
+                <div className="flex justify-center items-center h-full w-full bg-gray-200 opacity-20">
 
                 </div>
             </div>

@@ -28,7 +28,7 @@ function CardProduct({ product, addClick, index }: CardProductProps) {
                     //<img src="" alt="" />
                 }
             </div>
-            <p className="text-green-700">
+            <p className="font-bold" style={{ color : 'var(--primary-color)' }}>
                 {product.name}
             </p>
             <p className="text-sm text-gray-500 flex-1">
@@ -46,12 +46,12 @@ function CardProduct({ product, addClick, index }: CardProductProps) {
             {
                 product.stock != undefined && product.stock > 0 ? (
                     <div className="md:flex w-full items-center justify-between">
-                        <div className="w-1/3 flex justify-center items-center bg-green-100 p-1 rounded-sm gap-2 font-bold">
+                        <div className="w-1/3 flex justify-between items-center rounded-sm gap-2 font-bold p-1" style={{ background: 'var(--primary-color)' }}>
                             <p className=" p1 px-2 md:px-3 bg-white rounded-sm cursor-pointer" onClick={() => setCount((acount) => acount > 1 ? acount - 1 : acount)}>-</p>
                             <p className="">{count}</p>
                             <p className=" p1 px-2 md:px-3 bg-white rounded-sm cursor-pointer" onClick={() => setCount((acount) => acount + 1)}>+</p>
                         </div>
-                        <Button className="bg-green-700 cursor-pointer" variant="default" onClick={() => addClick(count)}>
+                        <Button className="cursor-pointer" style={{background : 'var(--primary-color)'}} variant="default" onClick={() => addClick(count)}>
                             <p className='text-sm'>
                                 Agregar al carrito
                             </p>
