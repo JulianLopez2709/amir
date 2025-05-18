@@ -11,7 +11,6 @@ import RightPanel from "@/components/admin/RightPanel";
 import { newProductToOrder } from "@/@types/Order";
 
 
-
 type PanelMode = 'new-order' | 'create-product' | 'add-to-order'
 
 function ProductsPage() {
@@ -27,9 +26,9 @@ function ProductsPage() {
     const [listProduct, setListProduct] = useState<Product[]>([])
 
     const handle = async () => {
-
+        const id = localStorage.getItem("user");
         try {
-            const response = await getAllProductByCompany(1)
+            const response = await getAllProductByCompany(JSON.parse(id).companies[0].companyId)
             setListProduct(response)
         } catch (err) {
             console.log(err)
