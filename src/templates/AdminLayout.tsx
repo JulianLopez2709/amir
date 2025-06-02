@@ -1,59 +1,86 @@
 import { Button } from "@/components/ui/button"
-import { House, LogOut, ScrollText, Settings } from "lucide-react"
+import { ChevronsUpDown, DiamondPlus, House, LogOut, ScrollText, Settings } from "lucide-react"
 import { Link, Outlet, useLocation } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Company from "@/@types/Company"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { useAuth } from "@/context/AuthContext"
 
 
 
 function AdminLayout() {
     const location = useLocation()
+    const { company, setCompany, primaryColor, secondaryColor, user } = useAuth();
+
 
     const getSectionTitle = () => {
         switch (location.pathname) {
-            case '/admin':
-                return 'Inicio'
-            case '/admin/products':
-                return 'Productos'
-            case '/admin/orders':
-                return 'Pedidos'
-            case '/admin/setting':
-                return 'Configuración'
-            default:
-                return 'Section'
+            case '/admin': return 'Inicio';
+            case '/admin/products': return 'Productos';
+            case '/admin/orders': return 'Pedidos';
+            case '/admin/setting': return 'Configuración';
+            default: return 'Sección';
         }
-    }
+    };
 
     const isActive = (path: string) => {
         return location.pathname === path
     }
-    
-    const company: Company = {
-        id: 1,
-        type: "Restaurante",
-        name: "Mi Restaurante",
-        slogan: "La mejor comida del mundo",
-        logo: "https://example.com/logo.png",
-        primary_color: "#000088",
-        secundary_color: "#C70039",
-        plan: "Premium"
-    }
 
-    useEffect(() => {
-        // Establecer colores como variables CSS
-        document.documentElement.style.setProperty("--primary-color", company.primary_color);
-        document.documentElement.style.setProperty("--secondary-color", company.secundary_color);
-    }, [company]);
-
+    const otherCompanies = user?.companies || [];
 
     return (
         <div className="h-screen flex flex-col">
-            <header className="border-b-2 border-gray-100 p-2 md:p-5 flex justify-between items-center">
-                <div className="flex text-2xl gap-5 ">
-                    <div className="w-10 h-5 text-green-700 font-bold mr-2">AMIN</div>
-                    <p className="font-bold">{getSectionTitle()}</p>
-                </div>
+            <header className=" border-gray-100 p-1 md:px-5 md:py-3 flex justify-between items-center">
+                <Popover >
+                    <PopoverTrigger className="min-w-74">
+                        <div className="flex text-2xl gap-5 w-full justify-between items-center cursor-pointer hover:bg-gray-100 hover:rounded-sm transition-all duration-300 p-1">
+                            <div className={`w-10 h-10 rounded-xl`} 
+                                style={{background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`, }}>
+                            </div>
+
+                            <div className="flex flex-col mr-2 text-start flex-1">
+                                <h2 className="font-bold text-xl">{company?.name || "Nombre de la compañía"}</h2>
+                                <p className="text-sm">{getSectionTitle()}</p>
+                            </div>
+                            <ChevronsUpDown className="opacity-70" />
+                        </div>
+                    </PopoverTrigger >
+
+                    <PopoverContent>
+                        <div>
+                            {otherCompanies.map((companies) => (
+                                console.log(companies),
+                                <div
+                                    key={companies.id}
+                                    className="flex items-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer"
+                                    onClick={() => {
+                                        setCompany(companies);
+                                    }}
+                                >
+                                    <div className={`w-10 h-10 rounded-xl`}
+                                        style={{background: `linear-gradient(to right, ${companies.primary_color}, ${companies.secondary_color})`, }}
+                                        ></div>
+                                    <div className="flex flex-col ml-3">
+                                        <h2 className="font-bold text-base">{companies.name}</h2>
+                                        <p className="text-sm">{companies.type}</p>
+                                    </div>
+                                    {company?.id === companies.id ? (
+                                        <span className="ml-auto text-green-500">✓</span>
+                                    ) : (
+                                        null
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="border-2 rounded-sm p-2 flex justify-center items-center text-center cursor-pointer hover:bg-gray-100 transition-all duration-300">
+                            <DiamondPlus className="mr-1 size-5 opacity-70" />
+                            <p className="text-sm">Nueva Organizacion</p>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+
                 <Avatar>
                     <AvatarImage src="https://github.com/shadcn.png" />
                     <AvatarFallback>CN</AvatarFallback>
@@ -84,8 +111,8 @@ function AdminLayout() {
                         </Link>
                     </div>
                     <Link to="/" className="w-full">
-                        <Button className=" cursor-pointer w-full h-full items-center hover:bg-green-800 text-white rounded-none py-7 font-bold" style={{background : 'var(--primary-color)'}}>
-                            <LogOut className=""/>
+                        <Button className=" cursor-pointer w-full h-full items-center text-white rounded-none py-7 font-bold hover:opacity-80 transition-all duration-300" style={{ background: 'var(--primary-color)' }}>
+                            <LogOut className="" />
                             <span>Salir</span>
                         </Button>
                     </Link>

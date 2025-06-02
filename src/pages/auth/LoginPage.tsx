@@ -5,33 +5,31 @@ import inventariadoImg from '../../assets/inventariadoImg.webp'
 import { useState } from "react"
 import { login } from "@/api/auth/login"
 import Cookies from "js-cookie"
+import { useAuth } from "@/context/AuthContext"
 
 function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const navigate = useNavigate();
+ const { setUser, setCompany } = useAuth();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      return
-    }
-
+    if (!email || !password) return;
     try {
-      const responde = await login(email, password)
+      const responde = await login(email, password);
       if (responde) {
-        const cook = Cookies.get("token") 
-        localStorage.setItem("user", JSON.stringify(responde))
-        //localStorage.setItem("primary_color", JSON.stringify(responde.companies[0].primary_color))
-        //localStorage.setItem("secondary_color", JSON.stringify(responde.companies[0].secundary_color))
-        navigate("/admin/products")
+        localStorage.setItem("user", JSON.stringify(responde));
+        console.log(responde);
+        setUser(responde); // Actualiza el contexto global
+        setCompany(responde.companies[0]); // Establece la primera empresa del usuario
+        navigate("/admin/products");
       } else {
-        alert("Error al iniciar sesión. Por favor, verifica tus credenciales.")
+        alert("Credenciales incorrectas.");
       }
     } catch (error) {
-      console.error("Error al iniciar sesión:", error);
-      alert("Error al iniciar sesión. Por favor, verifica tus credenciales.");
+      alert("Error en el login.");
     }
-  }
+  };
 
   return (
     <div className="h-screen md:flex">

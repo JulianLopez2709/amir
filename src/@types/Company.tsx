@@ -7,7 +7,7 @@ interface Company{
     slogan: string,
     logo : string,
     primary_color : string,
-    secundary_color : string,
+    secondary_color : string,
     plan : string,
 }
 

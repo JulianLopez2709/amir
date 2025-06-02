@@ -18,52 +18,66 @@ import CreateCompany from "./pages/admin/company/CreateCompany"
 import ProtectRoute from "./components/ProtectRoute"
 import './App.css'
 import User from './@types/User'
-
-
-const user: User = {
-  id: 1,
-  name: "Julián López",
-  email: "julian@example.com",
-  username: "julian_dev",
-  rol: "admin", // o el enum que estés usando
-}
+import { useEffect, useState } from 'react'
+import { AuthProvider } from './context/AuthContext'
 
 function App() {
 
+  const [user, setUser] = useState<User | null>(null)
+  const [rol, setRol] = useState<string | null>("asesor")
+  useEffect(() => {
+    /*const getToken = Cookies.get("token")
+    if (getToken) {
+      const decoded : DecodedToken = jwtDecode(getToken)
+      console.log(decoded)
+      setRol(decoded.rol)
+    }*/
+    const dataUserLocal = localStorage.getItem("user")
+    if (dataUserLocal) {
+      const userLocal = JSON.parse(dataUserLocal)
+      setUser(userLocal)
+      setRol(userLocal.rol)
+    }
+  }, [])
+
   return (
-    <BrowserRouter>
-      <Routes>
+    <AuthProvider>
 
-        {/* Rutas públicas */}
-        <Route element={<PublicLayout />}>
-          <Route index element={<LandingPage />} />
-        </Route>
+      <BrowserRouter>
+        <Routes>
 
-        {/* Página de login */}
-        <Route path="/auth" element={<LoginPage />} />
+          {/* Rutas públicas */}
+          <Route element={<PublicLayout />}>
+            <Route index element={<LandingPage />} />
+          </Route>
 
-        {/* Rutas protegidas */}
-        <Route element={<AdminLayout />} >
+          {/* Página de login */}
+          <Route path="/auth" element={<LoginPage />} />
+
+          {/* Rutas protegidas */}
+          <Route element={<AdminLayout />} >
+            <Route element={<ProtectRoute isAllow={!!user} />}>
+              <Route path="/admin/products" element={<ProductsPage />} />
+              <Route path="/admin/orders" element={<OrderPage />} />
+            </Route>
+            <Route element={<ProtectRoute isAllow={!!user && rol == "admin"} redirectTo="/admin/products" />} >
+              <Route path="/admin" index element={<DashboardPage />} />
+              <Route path="/admin/setting" element={<SettingPage />} />
+            </Route>
+          </Route>
+
           <Route element={<ProtectRoute isAllow={!!user} />}>
-            <Route path="/admin/products" element={<ProductsPage />} />
-            <Route path="/admin/orders" element={<OrderPage />} />
+            <Route path="/createCompany" element={<CreateCompany />} />
           </Route>
-          <Route element={<ProtectRoute isAllow={!!user && user.rol == "admin"} redirectTo="/admin/products"/>} >
-            <Route path="/admin" index element={<DashboardPage />} />
-            <Route path="/admin/setting" element={<SettingPage />} />
-          </Route>
-        </Route>
-
-        <Route element={<ProtectRoute isAllow={!!user} />}>
-          <Route path="/createCompany" element={<CreateCompany />} />
-        </Route>
 
 
-        {/* Redirección si no encuentra la ruta */}
-        <Route path="*" element={<Navigate to="/" />} />
+          {/* Redirección si no encuentra la ruta */}
+          <Route path="*" element={<Navigate to="/" />} />
 
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+
   )
 }
 

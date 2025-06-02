@@ -10,12 +10,19 @@ import { Link } from 'react-router-dom'
 
 function OrderPage() {
   useEffect(() => {
-    async function fetchData() {
-      const response = await getAllOrdersByCompany(1)
-      setListOrder(response)
-    }
+
     fetchData()
   }, [])
+
+  async function fetchData() {
+    const id = localStorage.getItem("user");
+    try {
+      const response = await getAllOrdersByCompany(JSON.parse(id).companies[0].id)
+      setListOrder(response)
+    } catch (err) {
+      console.log(err)
+    }
+  }
 
   const [listOrder, setListOrder] = useState<OrdenReques[]>([])
 
@@ -119,7 +126,7 @@ function OrderPage() {
 
       <div className='flex flex-col'>
         <div className='h-16 flex w-full justify-between items-center'>
-          <h2 className='font-bold text-2xl'>Lista de Pedidods</h2>
+          <h2 className='font-bold text-2xl'>Lista de Pedidos</h2>
           <Link to="/admin/products?orden">
             <Button variant="default" className='h-full w-full cursor-pointer bg-green-700'>+ Nuevo Pedido</Button>
           </Link>

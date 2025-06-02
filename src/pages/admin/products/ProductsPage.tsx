@@ -9,6 +9,7 @@ import { TypeUser } from "@/@types/User";
 import { getAllProductByCompany } from "@/api/product/getAllProductByCompany";
 import RightPanel from "@/components/admin/RightPanel";
 import { newProductToOrder } from "@/@types/Order";
+import { useAuth } from "@/context/AuthContext";
 
 
 type PanelMode = 'new-order' | 'create-product' | 'add-to-order'
@@ -24,11 +25,12 @@ function ProductsPage() {
     const typeuser: TypeUser = "admin"
 
     const [listProduct, setListProduct] = useState<Product[]>([])
+    const {company} = useAuth();
+
 
     const handle = async () => {
-        const id = localStorage.getItem("user");
         try {
-            const response = await getAllProductByCompany(JSON.parse(id).companies[0].companyId)
+            const response = await getAllProductByCompany(company?.id || 0);
             setListProduct(response)
         } catch (err) {
             console.log(err)

@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Switch } from '../ui/switch'
 import Product from '@/@types/Product'
 import { toast } from 'sonner'
+import { useAuth } from '@/context/AuthContext'
 
 
 function CreateProductPanel() {
 
-    const [product, setProduct] = useState<Product>({ name: '', description: '', price_selling: 0, price_cost: 0, barcode: undefined, companyId: 1, avaliable: true, is_favorite: false, categoryId: undefined })
+    const { company } = useAuth()
+    const [product, setProduct] = useState<Product>({ name: '', description: '', price_selling: 0, price_cost: 0, barcode: undefined, companyId: company?.id || 0, avaliable: true, is_favorite: false, categoryId: undefined })
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [areStock, setAreStock] = useState(false)
@@ -50,7 +52,7 @@ function CreateProductPanel() {
             price_selling: Number(product.price_selling),
             stock: product.stock !== undefined ? Number(product.stock) : undefined,
             stock_minimo: product.stock_minimo !== undefined ? Number(product.stock_minimo) : undefined,
-            companyId: Number(product.companyId),
+            companyId: company?.id || 0,
         };
         try {
             await createProduct(cleanedProduct)
@@ -62,7 +64,7 @@ function CreateProductPanel() {
                 price_selling: 0,
                 price_cost: 0,
                 barcode: 0,
-                companyId: 1,
+                companyId: company?.id || 0,
                 imgUrl: undefined,
                 stock_minimo: undefined,
                 stock: undefined,
