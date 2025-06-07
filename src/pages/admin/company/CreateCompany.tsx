@@ -45,7 +45,6 @@ function CreateCompany() {
             userId
         };
 
-        console.log('Datos del formulario:', formData);
         // Lógica para enviar a la base de datos vendría aquí
     };
 

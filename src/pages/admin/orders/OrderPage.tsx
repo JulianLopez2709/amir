@@ -4,38 +4,78 @@ import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { CircleDollarSign, CreditCard, Printer } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import { CircleDollarSign, CreditCard, Printer, RefreshCcw, ShoppingBag } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 function OrderPage() {
-  useEffect(() => {
+  const { company } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [listOrder, setListOrder] = useState<OrdenReques[]>([]);
+  const [selectOrden, setSelectOrden] = useState<OrdenReques | null>(null);
+  const [detail, setDetail] = useState(false);
 
-    fetchData()
-  }, [])
+
+  useEffect(() => {
+    fetchData();
+    setSelectOrden(null);
+  }, [company?.id]);
 
   async function fetchData() {
-    const id = localStorage.getItem("user");
+    setIsLoading(true);
+    setError(null);
+
     try {
-      const response = await getAllOrdersByCompany(JSON.parse(id).companies[0].id)
-      setListOrder(response)
+      if (!company?.id) {
+        setListOrder([]);
+        return;
+      }
+      const response = await getAllOrdersByCompany(company.id);
+      setListOrder(response);
     } catch (err) {
-      console.log(err)
+      const errorMessage = err instanceof Error ? err.message : 'Error al cargar las órdenes';
+      console.log("error", err)
+      setError(errorMessage);
+      /*toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMessage,
+      });*/
+    } finally {
+      setIsLoading(false);
     }
   }
 
-  const [listOrder, setListOrder] = useState<OrdenReques[]>([])
-
-
-  const [selectOrden, setSelectOrden] = useState<OrdenReques | null>(null)
-  const [detail, setDetail] = useState(false)
   const showDetail = () => {
     setDetail(!detail)
   }
 
-  const numberOrden = 1457
+ if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full p-8">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin">
+            <RefreshCcw className="h-8 w-8 text-green-700" />
+          </div>
+          <p className="text-gray-600">Cargando órdenes...</p>
+        </div>
+      </div>
+    );
+  }
 
-
+  if (!company?.id) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8">
+        <div className="text-center space-y-4">
+          <ShoppingBag className="h-16 w-16 text-gray-400 mx-auto" />
+          <h2 className="text-2xl font-bold text-gray-700">Sin compañía seleccionada</h2>
+          <p className="text-gray-500">Por favor, seleccione una compañía para ver sus órdenes</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='relative  grid lg:grid-cols-[0.4fr_1fr] h-full gap-2'>
@@ -97,7 +137,7 @@ function OrderPage() {
             <p>$ {selectOrden?.total_price}</p>
           </div>
           <div className='flex flex-col gap-2 mb-3'>
-            <Link to={`/admin/products?orden=${numberOrden}`}>
+            <Link to={`/admin/products?orden=${selectOrden?.order}`}>
               <Button variant="default" className='w-full h-full bg-blue-600 p-5 font-bold mb-3 cursor-pointer' >Agregar un nuevo Producto</Button>
             </Link>
             <Button variant="default" className='bg-black text-white p-7 w-full cursor-pointer'>

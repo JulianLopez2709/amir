@@ -29,11 +29,17 @@ function ProductsPage() {
 
 
     const handle = async () => {
+        if (!company?.id) {
+            setListProduct([]);
+            return;
+        }
+        
         try {
-            const response = await getAllProductByCompany(company?.id || 0);
+            const response = await getAllProductByCompany(company.id);
             setListProduct(response)
         } catch (err) {
-            console.log(err)
+            console.error("Error loading products:", err);
+            setListProduct([]);
         }
     }
 
@@ -46,7 +52,7 @@ function ProductsPage() {
 
     useEffect(() => {
         handle()
-    }, [])
+    }, [company])
 
 
     const addNewProduct = (product: Product, acount: number) => {
@@ -76,9 +82,9 @@ function ProductsPage() {
             <div className="md:p-3">
                 <div className="flex justify-between items-center gap-5 mb-2">
                     <div className="p-2 rounded-sm bg-green-700 text-white">Filter</div>
-                    <Input className="bg-white p-2 text-sm md:text-xl" placeholder="Busca producto por el nombre o el codigo." />
+                    <Input className="bg-white p-2 text-sm" placeholder="Busca producto por el nombre o el codigo." />
                     {
-                        typeuser == "admin" ? (
+                        company?.role === "admin" ? (
                             <Button className="border border-green-700 bg-white text-green-700 cursor-pointer" variant="outline" onClick={newProductClick}>+ Nuevo Producto</Button>
                         ) : (null)
                     }
@@ -87,16 +93,33 @@ function ProductsPage() {
 
                 { /*component cards*/}
                 <div className="h-full">
-                    <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh]  md:max-h-[85vh] object-cover">
-                        {
-                            //un for de la respuesta a la apicard product
-                            listProduct.map((product, index) => (
-                                <li key={index} className="flex justify-center items-center ">
+                    {listProduct.length === 0 && company?.role === "admin" ? (
+                        <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
+                            <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center">
+                                <ShoppingCart className="w-16 h-16 text-gray-400" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-700">No hay productos</h2>
+                            <p className="text-gray-500 text-center max-w-md">
+                                Esta compañía aún no tiene productos registrados. ¡Comienza agregando tu primer producto!
+                            </p>
+                            {typeuser === "admin" && (
+                                <Button 
+                                    className="mt-4 bg-green-700 hover:bg-green-800 text-white" 
+                                    onClick={newProductClick}
+                                >
+                                    + Agregar Primer Producto
+                                </Button>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] object-cover">
+                            {listProduct.map((product, index) => (
+                                <li key={index} className="flex justify-center items-center">
                                     <CardProduct product={product} addClick={(count) => addNewProduct(product, count)} index={index} />
                                 </li>
-                            ))
-                        }
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 

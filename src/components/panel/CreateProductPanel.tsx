@@ -74,8 +74,7 @@ function CreateProductPanel() {
             });
 
             //setListProduct(prevList => [...prevList, response])
-        } catch (err) {
-            console.log(err)
+        } catch (err) { 
             //setError((err as Error).message)
         }
     }

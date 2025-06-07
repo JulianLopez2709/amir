@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '../ui/button'
 import Product from "@/@types/Product";
+import { BoxesIcon } from 'lucide-react';
 
 type CardProductProps = {
     product: Product;
@@ -23,9 +24,13 @@ function CardProduct({ product, addClick, index }: CardProductProps) {
                 <p className='font-bold text-xl'>{index + 1}</p>
                 <p className="text-sm opacity-70 text-gray-400">{product.barcode}</p>
             </div>
-            <div className="h-48 w-full bg-gray-400">
+            <div className="h-48  w-full bg-gray-100 flex items-center justify-center">
                 {
-                    //<img src="" alt="" />
+                    product.imgUrl ? (
+                        <img src={product.imgUrl} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                        <BoxesIcon className="text-sm text-gray-500 size-10" />
+                    )
                 }
             </div>
             <p className="font-bold" style={{ color : 'var(--primary-color)' }}>
