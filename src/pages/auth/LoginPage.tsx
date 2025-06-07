@@ -10,46 +10,91 @@ import { useAuth } from "@/context/AuthContext"
 function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate();
- const { setUser, setCompany } = useAuth();
+  const { setUser, setCompany, setCompanies } = useAuth();
 
   const handleLogin = async () => {
-    if (!email || !password) return;
+    if (!email || !password) {
+      alert("Por favor ingrese email y contraseña");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const responde = await login(email, password);
-      if (responde) {
-        localStorage.setItem("user", JSON.stringify(responde));
-        console.log(responde);
-        setUser(responde); // Actualiza el contexto global
-        setCompany(responde.companies[0]); // Establece la primera empresa del usuario
-        navigate("/admin/products");
+      const response = await login(email, password);
+      
+      if (response && response.user) { 
+        // Guardamos los datos del usuario y compañías por separado
+        localStorage.setItem("user", JSON.stringify(response.user));
+        localStorage.setItem("companies", JSON.stringify(response.companies));
+        
+        // Actualizamos el estado
+        await Promise.all([
+          setUser(response.user),
+          setCompanies(response.companies)
+        ]);
+
+        // Establecemos la primera compañía como activa
+        if (response.companies && response.companies.length > 0) {
+          setCompany(response.companies[0]);
+        }
+
+        // Una vez que todo está guardado, navegamos
+        navigate("/admin/products", { replace: true });
       } else {
         alert("Credenciales incorrectas.");
       }
     } catch (error) {
-      alert("Error en el login.");
+      console.error('Error en login:', error);
+      alert("Error en el login. Por favor intente nuevamente.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="h-screen md:flex">
       <div className="w-96 h-full m-auto flex flex-col items-center justify-center">
-
           <h2 className="font-extrabold py-5 text-8xl text-green-700 ">Amin</h2>
           <h1 className="font-bold text-3xl">Ingresa a tu cuenta</h1>
           <h2 className="pb-10 text-xl">Gana tiempo y administra tu empresa.</h2>
           <div className="w-full py-3">
             <label htmlFor="email">Nombre de usuario o correo electronico</label>
-            <Input className="py-5 " type="text" id="email" placeholder="Ingrese email o username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input 
+              className="py-5" 
+              type="text" 
+              id="email" 
+              placeholder="Ingrese email o username" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              disabled={isLoading}
+              required 
+            />
           </div>
           <div className="w-full py-3">
             <div className="flex justify-between">
               <label htmlFor="password">Password</label>
               <p className="text-sm text-green-700 opacity-70">¿Olvidaste tu contraseña?</p>
             </div>
-            <Input className="py-5" type="password" id="password" placeholder="Ingrese Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Input 
+              className="py-5" 
+              type="password" 
+              id="password" 
+              placeholder="Ingrese Password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              disabled={isLoading}
+              required 
+            />
           </div>
-          <Button className="bg-green-700 w-full p-5" onClick={handleLogin}>Ingresar</Button>
+          <Button 
+            className="bg-green-700 w-full p-5" 
+            onClick={handleLogin} 
+            disabled={isLoading}
+          >
+            {isLoading ? 'Ingresando...' : 'Ingresar'}
+          </Button>
           <p className="text-sm opacity-70">Ingresa como asesor o administrador</p>
           <Link to="/">
             <p className="opacity-70 text-green-700">¿Necesitas ayuda?</p>

@@ -1,17 +1,18 @@
 import { Button } from "@/components/ui/button"
 import { ChevronsUpDown, DiamondPlus, House, LogOut, ScrollText, Settings } from "lucide-react"
-import { Link, Outlet, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useEffect, useState } from "react"
-import Company from "@/@types/Company"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { useAuth } from "@/context/AuthContext"
+import Cookies from "js-cookie"
+import { useEffect } from "react"
 
 
 
 function AdminLayout() {
     const location = useLocation()
-    const { company, setCompany, primaryColor, secondaryColor, user } = useAuth();
+    const navigate = useNavigate()
+    const { company, setCompany, primaryColor, secondaryColor, user, setUser, companies } = useAuth();
 
 
     const getSectionTitle = () => {
@@ -28,7 +29,30 @@ function AdminLayout() {
         return location.pathname === path
     }
 
-    const otherCompanies = user?.companies || [];
+    const otherCompanies = companies || [];
+
+    const handleLogout = () => {
+        // Clear auth state
+        setUser(null);
+        // Clear local storage
+        localStorage.removeItem('user');
+        localStorage.removeItem('companies');
+        // Remove token cookie
+        Cookies.remove('token');
+        // Set company to an empty company object instead of null
+        setCompany({
+            id: 0,
+            name: '',
+            primary_color: '#309b5c',
+            secondary_color: '#309b5c',
+            role: '',
+            slogan: '',
+            logo: '',
+            type: '',
+        });
+        // Navigate to home and replace the history entry
+        navigate('/', { replace: true });
+    };
 
     return (
         <div className="h-screen flex flex-col">
@@ -51,7 +75,6 @@ function AdminLayout() {
                     <PopoverContent>
                         <div>
                             {otherCompanies.map((companies) => (
-                                console.log(companies),
                                 <div
                                     key={companies.id}
                                     className="flex items-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer"
@@ -110,12 +133,16 @@ function AdminLayout() {
                             </Button>
                         </Link>
                     </div>
-                    <Link to="/" className="w-full">
-                        <Button className=" cursor-pointer w-full h-full items-center text-white rounded-none py-7 font-bold hover:opacity-80 transition-all duration-300" style={{ background: 'var(--primary-color)' }}>
+                    <div className="w-full">
+                        <Button 
+                            onClick={handleLogout}
+                            className="cursor-pointer w-full h-full items-center text-white rounded-none py-7 font-bold hover:opacity-80 transition-all duration-300" 
+                            style={{ background: 'var(--primary-color)' }}
+                        >
                             <LogOut className="" />
                             <span>Salir</span>
                         </Button>
-                    </Link>
+                    </div>
                 </nav>
                 <main className="bg-[#EFEFEF] flex-1  w-full"><Outlet /></main>
             </div>

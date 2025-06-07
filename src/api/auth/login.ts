@@ -1,7 +1,27 @@
 import apiFetch from "../client"
 
-export const login = async (identifier:string, password:string)=> {
-    const response = await apiFetch(`auth/login`, {
+interface Company {
+    id: number;
+    role: string;
+    name: string;
+    slogan: string;
+    logo: string;
+    type: string;
+    primary_color: string;
+    secondary_color: string;
+}
+
+interface LoginResponse {
+    user: {
+        id: number;
+        email: string;
+        name: string;
+    };
+    companies: Company[];
+}
+
+export const login = async (identifier:string, password:string): Promise<LoginResponse>=> {
+    const response = await apiFetch<LoginResponse>(`auth/login`, {
         method: 'POST',
         body: JSON.stringify({identifier, password}),
     })
