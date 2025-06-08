@@ -2,7 +2,7 @@ import CardProduct from "@/components/admin/CardProduct";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSearchParams } from "react-router-dom";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import Product from "@/@types/Product";
 import { TypeUser } from "@/@types/User";
@@ -22,15 +22,18 @@ function ProductsPage() {
     const [modePanelRight, setModePanelRight] = useState<PanelMode>('new-order')
     const [shoppingCart, setShoppingCart] = useState(false)
     const [listProductsAdded, setListProductsAdded] = useState<newProductToOrder[]>([])
+    const [searchTerm, setSearchTerm] = useState("")
     const typeuser: TypeUser = "admin"
 
     const [listProduct, setListProduct] = useState<Product[]>([])
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
     const { company } = useAuth();
 
 
     const handle = async () => {
         if (!company?.id) {
             setListProduct([]);
+            setFilteredProducts([]);
             return;
         }
 
@@ -38,9 +41,11 @@ function ProductsPage() {
             setListProductsAdded([])
             const response = await getAllProductByCompany(company.id);
             setListProduct(response)
+            setFilteredProducts(response)
         } catch (err) {
             console.error("Error loading products:", err);
             setListProduct([]);
+            setFilteredProducts([]);
         }
     }
 
@@ -55,6 +60,20 @@ function ProductsPage() {
         handle()
     }, [company])
 
+    // Efecto para filtrar productos cuando cambia el término de búsqueda
+    useEffect(() => {
+        if (!searchTerm.trim()) {
+            setFilteredProducts(listProduct);
+            return;
+        }
+
+        const searchTermLower = searchTerm.toLowerCase();
+        const filtered = listProduct.filter(product => 
+            product.name.toLowerCase().includes(searchTermLower) || 
+            (product.barcode && product.barcode.toString().includes(searchTermLower))
+        );
+        setFilteredProducts(filtered);
+    }, [searchTerm, listProduct]);
 
     const addNewProduct = (product: Product, acount: number) => {
         const orden: newProductToOrder = {
@@ -82,8 +101,15 @@ function ProductsPage() {
 
             <div className="md:p-3">
                 <div className="flex justify-between items-center gap-5 mb-2">
-                    <div className="p-2 rounded-sm bg-green-700 text-white">Filter</div>
-                    <Input className="bg-white p-2 text-sm" placeholder="Busca producto por el nombre o el codigo." />
+                    <div className="relative flex-1">
+                        <Input 
+                            className="bg-white p-2 pl-10 text-sm w-full" 
+                            placeholder="Buscar por nombre o código de barras..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    </div>
                     {
                         company?.role === "admin" ? (
                             <Button className="border border-green-700 bg-white text-green-700 cursor-pointer" variant="outline" onClick={newProductClick}>+ Nuevo Producto</Button>
@@ -94,16 +120,21 @@ function ProductsPage() {
 
                 { /*component cards*/}
                 <div className="h-full">
-                    {listProduct.length === 0 ? (
+                    {filteredProducts.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
                             <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center">
                                 <ShoppingCart className="w-16 h-16 text-gray-400" />
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-700">No hay productos</h2>
+                            <h2 className="text-2xl font-bold text-gray-700">
+                                {searchTerm ? "No se encontraron productos" : "No hay productos"}
+                            </h2>
                             <p className="text-gray-500 text-center max-w-md">
-                                Esta compañía aún no tiene productos registrados. ¡Comienza agregando tu primer producto!
+                                {searchTerm 
+                                    ? "No hay productos que coincidan con tu búsqueda. Intenta con otros términos."
+                                    : "Esta compañía aún no tiene productos registrados. ¡Comienza agregando tu primer producto!"
+                                }
                             </p>
-                            {company?.role === "admin" && (
+                            {!searchTerm && company?.role === "admin" && (
                                 <Button
                                     className="mt-4 bg-green-700 hover:bg-green-800 text-white"
                                     onClick={newProductClick}
@@ -114,7 +145,7 @@ function ProductsPage() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] object-cover">
-                            {listProduct.map((product, index) => (
+                            {filteredProducts.map((product, index) => (
                                 <li key={index} className="flex justify-center items-center">
                                     <CardProduct product={product} addClick={(count) => addNewProduct(product, count)} index={index} />
                                 </li>
@@ -140,7 +171,7 @@ function ProductsPage() {
                     onClose={() => setShoppingCart(false)}
                 />
             </div>
-        </div >
+        </div>
     )
 }
 

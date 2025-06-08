@@ -5,7 +5,7 @@ import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/AuthContext'
-import { CircleDollarSign, CreditCard, Printer, RefreshCcw, ShoppingBag } from 'lucide-react'
+import { BoxesIcon, CircleDollarSign, CreditCard, Printer, RefreshCcw, ShoppingBag } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -52,7 +52,7 @@ function OrderPage() {
     setDetail(!detail)
   }
 
- if (isLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full p-8">
         <div className="flex flex-col items-center gap-4">
@@ -84,8 +84,8 @@ function OrderPage() {
           close
         </div>
         <div className='flex justify-between items-center mb-4'>
-          <h2>
-            Pedido #{selectOrden?.order}
+          <h2 className='font-bold'>
+            Pedido # {selectOrden?.id.toString().split("-")[0]}
           </h2>
           <Status color='green' name='terminado' />
         </div>
@@ -105,14 +105,16 @@ function OrderPage() {
           <div className="flex flex-1 flex-col w-full mb-3">
             {
               selectOrden?.products?.map((p, index) => (
-                <div className="flex justify-between items-center" key={index}>
-                  <div className="size-10 bg-gray-200"></div>
-                  <div>
-                    <p>{p.product?.name}</p>
-                    <p>{p.product?.description}</p>
+                <div className="flex justify-between items-center gap-2" key={index}>
+                  <div className="size-10 bg-gray-50 flex items-center justify-center rounded-sm">
+                    <BoxesIcon className='size-6 text-gray-500' />
                   </div>
-                  <p>{p.quantity}</p>
-                  <p>${p.product?.price_selling}</p>
+                  <div className='flex-2 flex-col'>
+                    <p className='font-bold'>{p.product?.name}</p>
+                    <p className='text-sm'>{p.product?.description}</p>
+                  </div>
+                  <p className='font-bold text-center flex-1'>{p.quantity}</p>
+                  <p className='font-bold'>${p.product?.price_selling}</p>
                 </div>
               ))
             }
@@ -137,7 +139,7 @@ function OrderPage() {
             <p>$ {selectOrden?.total_price}</p>
           </div>
           <div className='flex flex-col gap-2 mb-3'>
-            <Link to={`/admin/products?orden=${selectOrden?.order}`}>
+            <Link to={`/admin/products?orden=${selectOrden?.id}`}>
               <Button variant="default" className='w-full h-full bg-blue-600 p-5 font-bold mb-3 cursor-pointer' >Agregar un nuevo Producto</Button>
             </Link>
             <Button variant="default" className='bg-black text-white p-7 w-full cursor-pointer'>

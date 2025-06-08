@@ -4,7 +4,7 @@ type Status = "new" | "proceso" | "terminado"  | "cancelado"
 
 export interface OrdenReques{
     cliente_create : string,
-    order : number,
+    id : number,
     status : string,
     products ?: Product_Orden[],
     //metodo_pago : string,
