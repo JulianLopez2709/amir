@@ -5,9 +5,11 @@ import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/AuthContext'
-import { BoxesIcon, CircleDollarSign, CreditCard, Printer, RefreshCcw, ShoppingBag } from 'lucide-react'
+import { BoxesIcon, CircleDollarSign, CreditCard, Printer, RefreshCcw, ShoppingBag, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+
+type PaymentMethod = 'cash' | 'card' | null;
 
 function OrderPage() {
   const { company } = useAuth();
@@ -17,6 +19,25 @@ function OrderPage() {
   const [selectOrden, setSelectOrden] = useState<OrdenReques | null>(null);
   const [detail, setDetail] = useState(false);
 
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+
+  const handleFinishOrder = async () => {
+    if (!paymentMethod) {
+      // Mostrar error - se necesita seleccionar método de pago
+      return;
+    }
+
+    try {
+      // Aquí iría la llamada a la API para finalizar la orden
+      // await finishOrder({
+      //   orderId: selectOrden?.id,
+      //   paymentMethod,
+      //   total: selectOrden?.total_price
+      // });
+    } catch (error) {
+      console.error('Error al finalizar la orden:', error);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -78,31 +99,38 @@ function OrderPage() {
   }
 
   return (
-    <div className='relative  grid lg:grid-cols-[0.4fr_1fr] h-full gap-2'>
-      <div className='w-full flex flex-col p-5 bg-white'>
-        <div className={`lg:hidden cursor-pointer`} onClick={showDetail}>
-          close
-        </div>
+    <div className='relative grid lg:grid-cols-[0.4fr_1fr] h-full gap-2'>
+      {/* Panel izquierdo - Detalles */}
+      <div className={`
+        fixed lg:relative lg:flex lg:w-auto lg:h-auto
+        ${detail ? 'flex' : 'hidden'}
+        right-0 left-0
+        py-2 px-2 lg:px-3
+        h-[95vh] flex-col bg-white
+      `}>
+
         <div className='flex justify-between items-center mb-4'>
           <h2 className='font-bold'>
             Pedido # {selectOrden?.id.toString().split("-")[0]}
           </h2>
-          <Status color='green' name='terminado' />
+          <div className='flex items-center gap-2'>
+            <Status color='green' name='terminado' />
+            <button className='lg:hidden' onClick={() => setDetail(false)}>
+              <X className="h-6 w-6" />
+            </button>
+          </div>
         </div>
+
         <div className='flex gap-2'>
           <Button variant="outline" className='flex rounded-sm gap-2 cursor-pointer'>
             <Printer className='text-black' />
             <p>Imprimir Factura</p>
           </Button>
-          <Button variant="outline" className='cursor-pointer'>
-            <div>
-              <div className='size-1 rounded-full bg-gray-400'></div>
-            </div>
-          </Button>
         </div>
-        <div className='flex flex-1 flex-col'>
+
+        <div className='flex flex-col h-full'>
           <p className='font-bold'>items {selectOrden?.products?.length}</p>
-          <div className="flex flex-1 flex-col w-full mb-3">
+          <div className="flex-1 flex-col w-full mb-3 overflow-y-auto">
             {
               selectOrden?.products?.map((p, index) => (
                 <div className="flex justify-between items-center gap-2" key={index}>
@@ -123,34 +151,61 @@ function OrderPage() {
 
 
           <div className='mb-4'>
-            <p className='font-bold'>Metodo de pago</p>
+            <p className='font-bold mb-2'>Metodo de pago</p>
             <div className='flex gap-5'>
-              <Button variant="outline" className='h-full bg-green-100 border border-green-700 rounded-xl hover:bg-green-100'>
-                <CircleDollarSign className='m-auto h-full w-full size-14 p-12 text-green-700' />
-              </Button>
-              <Button variant="outline" className='h-full  border rounded-xl cursor-pointer hover:bg-green-100 hover:border-green-700 hover:text-green-700'>
-                <CreditCard className='m-auto p-12  h-full w-full size-14 ' />
-              </Button>
+              <Button
+                  variant="outline"
+                  className={`flex flex-col flex-1 items-center justify-center p-4 h-20 rounded-xl 
+                    ${paymentMethod === 'cash' 
+                      ? 'bg-green-100 border-green-700 text-green-700' 
+                      : 'hover:bg-green-100 hover:border-green-700 hover:text-green-700'}`}
+                  onClick={() => setPaymentMethod('cash')}
+                >
+                  <CircleDollarSign className='size-8 mb-1' />
+                  <span className='text-sm'>Efectivo</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className={`flex flex-col flex-1 items-center justify-center p-4 h-20 rounded-xl
+                    ${paymentMethod === 'card' 
+                      ? 'bg-green-100 border-green-700 text-green-700' 
+                      : 'hover:bg-green-100 hover:border-green-700 hover:text-green-700'}`}
+                  onClick={() => setPaymentMethod('card')}
+                >
+                  <CreditCard className='size-8 mb-1' />
+                  <span className='text-sm'>Tarjeta</span>
+                </Button>
             </div>
           </div>
 
           <div className='flex justify-between items-center font-bold'>
-            <p>Total x2</p>
+            <p>Total ({selectOrden?.products?.length} items)</p>
             <p>$ {selectOrden?.total_price}</p>
           </div>
+
           <div className='flex flex-col gap-2 mb-3'>
             <Link to={`/admin/products?orden=${selectOrden?.id}`}>
-              <Button variant="default" className='w-full h-full bg-blue-600 p-5 font-bold mb-3 cursor-pointer' >Agregar un nuevo Producto</Button>
+              <Button variant="default" className='w-full h-full bg-blue-600 font-bold mb-3 cursor-pointer'>
+                Agregar un nuevo Producto
+              </Button>
             </Link>
-            <Button variant="default" className='bg-black text-white p-7 w-full cursor-pointer'>
-              <div>
-                <p className='font-bold'>Orden Finalizada</p>
-                <p>El pedido pasara a finalizada</p>
-              </div>
-            </Button>
+            <Button 
+                variant="default" 
+                className='bg-black text-white w-full cursor-pointer p-7'
+                onClick={handleFinishOrder}
+                disabled={!paymentMethod}
+              >
+                <div>
+                  <p className='font-bold'>Orden Finalizada</p>
+                  <p className='text-sm'>
+                    {paymentMethod 
+                      ? `Pago con ${paymentMethod === 'cash' ? 'efectivo' : 'tarjeta'}`
+                      : 'Seleccione método de pago'}
+                  </p>
+                </div>
+              </Button>
           </div>
         </div>
-
 
         <div className='border-t-2 flex flex-col gap-2 '>
           <div className='py-5'>
@@ -161,30 +216,56 @@ function OrderPage() {
           </div>
         </div>
 
-
       </div>
 
-
-
-      <div className='flex flex-col'>
-        <div className='h-16 flex w-full justify-between items-center'>
+      {/* Panel derecho - Lista de pedidos */}
+      <div className='flex flex-col h-full'>
+        <div className='h-16 flex w-full justify-between items-center px-4'>
           <h2 className='font-bold text-2xl'>Lista de Pedidos</h2>
           <Link to="/admin/products?orden">
             <Button variant="default" className='h-full w-full cursor-pointer bg-green-700'>+ Nuevo Pedido</Button>
           </Link>
         </div>
-        <div className="grid grid-cols-3 gap-5 h-fit overflow-y-auto scroll-auto max-h-[87vh]">
-          {
-            listOrder.map((orden, index) => (
-              <li key={index} className='list-none'>
-                <CardOrder item={orden} onClick={() => setSelectOrden(orden)} index={index + 1} />
-              </li>
 
-            ))
-          }
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 p-4 overflow-y-auto max-h-[85vh]">
+          {listOrder.map((orden, index) => (
+            <li key={index} className='list-none'>
+              <CardOrder
+                item={orden}
+                onClick={() => {
+                  setSelectOrden(orden);
+                  setDetail(true);
+                }}
+                index={index + 1}
+              />
+            </li>
+          ))}
         </div>
-      </div>
 
+        {/* Barra inferior fija en móvil */}
+        {selectOrden && (
+          <div className="lg:hidden fixed bottom-0 right-0  bg-white border-t shadow-lg">
+            <button
+              onClick={showDetail}
+              className="w-full p-4 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <BoxesIcon className="h-6 w-6" />
+                <div className="flex flex-col">
+                  <span className="font-semibold">Pedido #{selectOrden.id.toString().split("-")[0]}</span>
+                  <span className="text-sm text-gray-500">{selectOrden.products?.length || 0} productos</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold">${selectOrden.total_price}</span>
+                <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                  Ver Detalles
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

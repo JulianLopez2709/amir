@@ -14,7 +14,7 @@ interface RightPanelProps {
 function RightPanel({ mode,productsAdded,setProductsAdded, onClose }: RightPanelProps) {
     return (
         <div className="w-full px-2 h-full">
-            <button className=" flex md:hidden cursor-pointer w-full justify-end" onClick={onClose}><X/></button>
+            <button className=" flex lg:hidden cursor-pointer w-full justify-end" onClick={onClose}><X/></button>
             {mode === 'new-order' && <NewOrderPanel productsAdded={productsAdded} setProductsAdded={setProductsAdded} />}
             {mode === 'create-product' && <CreateProductPanel />}
             {mode === 'add-to-order' && <AddToOrderPanel productsAdded={productsAdded} />}

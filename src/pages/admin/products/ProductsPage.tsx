@@ -2,10 +2,9 @@ import CardProduct from "@/components/admin/CardProduct";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSearchParams } from "react-router-dom";
-import { ShoppingCart, Search } from "lucide-react";
+import { ShoppingCart, Search, RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import Product from "@/@types/Product";
-import { TypeUser } from "@/@types/User";
 import { getAllProductByCompany } from "@/api/product/getAllProductByCompany";
 import RightPanel from "@/components/admin/RightPanel";
 import { newProductToOrder } from "@/@types/Order";
@@ -23,14 +22,15 @@ function ProductsPage() {
     const [shoppingCart, setShoppingCart] = useState(false)
     const [listProductsAdded, setListProductsAdded] = useState<newProductToOrder[]>([])
     const [searchTerm, setSearchTerm] = useState("")
-    const typeuser: TypeUser = "admin"
-
+    const [isLoading, setIsLoading] = useState(false)
     const [listProduct, setListProduct] = useState<Product[]>([])
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
     const { company } = useAuth();
 
 
     const handle = async () => {
+        setIsLoading(true)
+
         if (!company?.id) {
             setListProduct([]);
             setFilteredProducts([]);
@@ -46,6 +46,8 @@ function ProductsPage() {
             console.error("Error loading products:", err);
             setListProduct([]);
             setFilteredProducts([]);
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -94,6 +96,20 @@ function ProductsPage() {
     const showDetail = () => {
         setShoppingCart(!shoppingCart)
     }
+
+    
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full p-8">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin">
+            <RefreshCcw className="h-8 w-8 text-green-700" />
+          </div>
+          <p className="text-gray-600">Cargando productos...</p>
+        </div>
+      </div>
+    );
+  }
 
 
     return (
@@ -158,7 +174,7 @@ function ProductsPage() {
             <div className={`
                     fixed z-50 
                     ${shoppingCart ? "flex" : "hidden"} 
-                    right-0 
+                    right-0
                     h-[95vh] w-full 
                     flex-col bg-white 
                     py-2 px-2 lg:px-7 
