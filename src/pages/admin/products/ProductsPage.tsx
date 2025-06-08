@@ -25,7 +25,7 @@ function ProductsPage() {
     const typeuser: TypeUser = "admin"
 
     const [listProduct, setListProduct] = useState<Product[]>([])
-    const {company} = useAuth();
+    const { company } = useAuth();
 
 
     const handle = async () => {
@@ -33,8 +33,9 @@ function ProductsPage() {
             setListProduct([]);
             return;
         }
-        
+
         try {
+            setListProductsAdded([])
             const response = await getAllProductByCompany(company.id);
             setListProduct(response)
         } catch (err) {
@@ -93,7 +94,7 @@ function ProductsPage() {
 
                 { /*component cards*/}
                 <div className="h-full">
-                    {listProduct.length === 0 && company?.role === "admin" ? (
+                    {listProduct.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
                             <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center">
                                 <ShoppingCart className="w-16 h-16 text-gray-400" />
@@ -102,9 +103,9 @@ function ProductsPage() {
                             <p className="text-gray-500 text-center max-w-md">
                                 Esta compañía aún no tiene productos registrados. ¡Comienza agregando tu primer producto!
                             </p>
-                            {typeuser === "admin" && (
-                                <Button 
-                                    className="mt-4 bg-green-700 hover:bg-green-800 text-white" 
+                            {company?.role === "admin" && (
+                                <Button
+                                    className="mt-4 bg-green-700 hover:bg-green-800 text-white"
                                     onClick={newProductClick}
                                 >
                                     + Agregar Primer Producto

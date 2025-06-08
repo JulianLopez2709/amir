@@ -5,6 +5,7 @@ import { createOrderBody, newProductToOrder } from "@/@types/Order"
 import { toast } from "sonner";
 import { createOrderByCompany } from "@/api/order/getAllOrdersByCompany";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 interface Props {
     productsAdded: newProductToOrder[];
@@ -17,6 +18,7 @@ function NewOrderPanel(
     { productsAdded, setProductsAdded }: Props
 ) {
     const navigate = useNavigate()
+    const { company } = useAuth();
 
     const handleDeleteProduct = (productId?: number) => {
         if (!productId) return;
@@ -34,7 +36,7 @@ function NewOrderPanel(
         };
         const ordenBody: createOrderBody = {
             total_price: 0,
-            companyId: 1,
+            companyId: company?.id || 0,
             products: listaProducts.map((p) => ({
                 productId: p.product.id,
                 status: "new",
