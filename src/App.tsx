@@ -19,6 +19,7 @@ import ProtectRoute from "./components/ProtectRoute"
 import './App.css'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './context/AuthContext'
+import { SocketProvider } from './context/SocketContext'
 
 // Componente separado para las rutas que necesitan acceso al contexto
 function AppRoutes() {
@@ -60,9 +61,11 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+
     </AuthProvider>
   );
 }

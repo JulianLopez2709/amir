@@ -1,4 +1,4 @@
-import { OrdenReques } from '@/@types/Order'
+import Orden, { OrdenReques } from '@/@types/Order'
 import { getAllOrdersByCompany } from '@/api/order/getAllOrdersByCompany'
 import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
@@ -7,7 +7,9 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/AuthContext'
 import { BoxesIcon, CircleDollarSign, CreditCard, Printer, RefreshCcw, ShoppingBag, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useSocket } from "@/context/SocketContext"
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 
 type PaymentMethod = 'cash' | 'card' | null;
 
@@ -18,6 +20,7 @@ function OrderPage() {
   const [listOrder, setListOrder] = useState<OrdenReques[]>([]);
   const [selectOrden, setSelectOrden] = useState<OrdenReques | null>(null);
   const [detail, setDetail] = useState(false);
+  const { socket } = useSocket()
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
 
@@ -38,6 +41,26 @@ function OrderPage() {
       console.error('Error al finalizar la orden:', error);
     }
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // Función que se ejecutará cuando llegue un nuevo producto
+    const handleNewOrder = (newOrder: OrdenReques) => {
+      // añadiendo la nueva orden al principio de la lista.
+      setListOrder(prevList => [newOrder, ...prevList]);
+    };
+
+    // Suscribimos el componente al evento 'newOrder'
+    socket.on('newOrder', handleNewOrder);
+
+    // Función de limpieza: Es CRUCIAL desuscribirse del evento
+    // cuando el componente se desmonte para evitar memory leaks.
+    return () => {
+      socket.off('newOrder', handleNewOrder);
+    };
+
+  }, [socket]);
 
   useEffect(() => {
     fetchData();
@@ -154,27 +177,27 @@ function OrderPage() {
             <p className='font-bold mb-2'>Metodo de pago</p>
             <div className='flex gap-5'>
               <Button
-                  variant="outline"
-                  className={`flex flex-col flex-1 items-center justify-center p-4 h-20 rounded-xl 
-                    ${paymentMethod === 'cash' 
-                      ? 'bg-green-100 border-green-700 text-green-700' 
-                      : 'hover:bg-green-100 hover:border-green-700 hover:text-green-700'}`}
-                  onClick={() => setPaymentMethod('cash')}
-                >
-                  <CircleDollarSign className='size-8 mb-1' />
-                  <span className='text-sm'>Efectivo</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className={`flex flex-col flex-1 items-center justify-center p-4 h-20 rounded-xl
-                    ${paymentMethod === 'card' 
-                      ? 'bg-green-100 border-green-700 text-green-700' 
-                      : 'hover:bg-green-100 hover:border-green-700 hover:text-green-700'}`}
-                  onClick={() => setPaymentMethod('card')}
-                >
-                  <CreditCard className='size-8 mb-1' />
-                  <span className='text-sm'>Tarjeta</span>
-                </Button>
+                variant="outline"
+                className={`flex flex-col flex-1 items-center justify-center p-4 h-20 rounded-xl 
+                    ${paymentMethod === 'cash'
+                    ? 'bg-green-100 border-green-700 text-green-700'
+                    : 'hover:bg-green-100 hover:border-green-700 hover:text-green-700'}`}
+                onClick={() => setPaymentMethod('cash')}
+              >
+                <CircleDollarSign className='size-8 mb-1' />
+                <span className='text-sm'>Efectivo</span>
+              </Button>
+              <Button
+                variant="outline"
+                className={`flex flex-col flex-1 items-center justify-center p-4 h-20 rounded-xl
+                    ${paymentMethod === 'card'
+                    ? 'bg-green-100 border-green-700 text-green-700'
+                    : 'hover:bg-green-100 hover:border-green-700 hover:text-green-700'}`}
+                onClick={() => setPaymentMethod('card')}
+              >
+                <CreditCard className='size-8 mb-1' />
+                <span className='text-sm'>Tarjeta</span>
+              </Button>
             </div>
           </div>
 
@@ -189,21 +212,21 @@ function OrderPage() {
                 Agregar un nuevo Producto
               </Button>
             </Link>
-            <Button 
-                variant="default" 
-                className='bg-black text-white w-full cursor-pointer p-7'
-                onClick={handleFinishOrder}
-                disabled={!paymentMethod}
-              >
-                <div>
-                  <p className='font-bold'>Orden Finalizada</p>
-                  <p className='text-sm'>
-                    {paymentMethod 
-                      ? `Pago con ${paymentMethod === 'cash' ? 'efectivo' : 'tarjeta'}`
-                      : 'Seleccione método de pago'}
-                  </p>
-                </div>
-              </Button>
+            <Button
+              variant="default"
+              className='bg-black text-white w-full cursor-pointer p-7'
+              onClick={handleFinishOrder}
+              disabled={!paymentMethod}
+            >
+              <div>
+                <p className='font-bold'>Orden Finalizada</p>
+                <p className='text-sm'>
+                  {paymentMethod
+                    ? `Pago con ${paymentMethod === 'cash' ? 'efectivo' : 'tarjeta'}`
+                    : 'Seleccione método de pago'}
+                </p>
+              </div>
+            </Button>
           </div>
         </div>
 

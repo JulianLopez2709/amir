@@ -9,12 +9,14 @@ interface RightPanelProps {
     productsAdded: newProductToOrder[];
     setProductsAdded: React.Dispatch<React.SetStateAction<newProductToOrder[]>>;
     onClose: () => void;
-  }
+}
 
-function RightPanel({ mode,productsAdded,setProductsAdded, onClose }: RightPanelProps) {
+function RightPanel({ mode, productsAdded, setProductsAdded, onClose }: RightPanelProps) {
     return (
         <div className="w-full px-2 h-full">
-            <button className=" flex lg:hidden cursor-pointer w-full justify-end" onClick={onClose}><X/></button>
+            <div className=" lg:hidden flex justify-end">
+                <button className=" cursor-pointer" onClick={onClose}><X /></button>
+            </div>
             {mode === 'new-order' && <NewOrderPanel productsAdded={productsAdded} setProductsAdded={setProductsAdded} />}
             {mode === 'create-product' && <CreateProductPanel />}
             {mode === 'add-to-order' && <AddToOrderPanel productsAdded={productsAdded} />}

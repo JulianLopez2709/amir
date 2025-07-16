@@ -4,7 +4,6 @@ import { Link, useNavigate } from "react-router-dom"
 import inventariadoImg from '../../assets/inventariadoImg.webp'
 import { useState } from "react"
 import { login } from "@/api/auth/login"
-import Cookies from "js-cookie"
 import { useAuth } from "@/context/AuthContext"
 
 function LoginPage() {

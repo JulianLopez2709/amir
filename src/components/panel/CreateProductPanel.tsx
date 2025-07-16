@@ -9,19 +9,41 @@ import Product from '@/@types/Product'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 
+const initialProductState = (companyId: number): Product => ({
+    name: '',
+    description: '',
+    price_selling: 0,
+    price_cost: 0,
+    barcode: undefined,
+    companyId: companyId,
+    avaliable: true,
+    is_favorite: false,
+    categoryId: undefined,
+    stock: undefined,
+    stock_minimo: undefined
+});
 
 function CreateProductPanel() {
 
     const { company } = useAuth()
-    const [product, setProduct] = useState<Product>({ name: '', description: '', price_selling: 0, price_cost: 0, barcode: undefined, companyId: company?.id || 0, avaliable: true, is_favorite: false, categoryId: undefined })
+    const [product, setProduct] = useState<Product>(initialProductState(company?.id || 0));
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [areStock, setAreStock] = useState(false)
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target
-        setProduct(prev => ({ ...prev, [name]: value }))
-    }
+        const { name, value } = e.target;
+        // Lista de los campos que deben ser numéricos
+        const numericFields = ['price_selling', 'price_cost', 'stock', 'stock_minimo'];
+        if (numericFields.includes(name)) {
+            // Si el valor está vacío, guardamos 'undefined'.
+            // Si no, lo convertimos a número.
+            const numValue = value === '' ? undefined : parseFloat(value);
+            setProduct(prev => ({ ...prev, [name]: numValue }));
+        } else {
+            setProduct(prev => ({ ...prev, [name]: value }));
+        }
+    };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -35,14 +57,7 @@ function CreateProductPanel() {
         e.preventDefault();
 
         if (product.price_cost > product.price_selling) {
-            toast("Error al crear producto", {
-                description: <p className='text-white'>El precio de costo no puede ser menor al precio de venta</p>,
-                duration: 3000,
-                style: {
-                    background: "red",
-                    color: "white"
-                }
-            })
+            toast.error("El precio de costo no puede ser mayor al precio de venta.")
             return;
         }
 
@@ -55,26 +70,19 @@ function CreateProductPanel() {
             companyId: company?.id || 0,
         };
         try {
-            await createProduct(cleanedProduct)
+            console.log('product new reset', cleanedProduct)
+            const res = await createProduct(cleanedProduct);
+            console.log('responde api ', res)
+            // Resetea el formulario usando el estado inicial
+            setProduct(initialProductState(company?.id || 0));
 
-            setProduct({
-                type: 'Producto',
-                name: '',
-                description: '',
-                price_selling: 0,
-                price_cost: 0,
-                barcode: 0,
-                companyId: company?.id || 0,
-                imgUrl: undefined,
-                stock_minimo: undefined,
-                stock: undefined,
-                avaliable: true,
-                is_favorite: false,
-                categoryId: undefined
-            });
+            // También reseteamos los otros estados del formulario
+            setImageFile(null);
+            setPreviewUrl(null);
+            setAreStock(false);
 
             //setListProduct(prevList => [...prevList, response])
-        } catch (err) { 
+        } catch (err) {
             //setError((err as Error).message)
         }
     }

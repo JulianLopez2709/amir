@@ -9,7 +9,8 @@ import { getAllProductByCompany } from "@/api/product/getAllProductByCompany";
 import RightPanel from "@/components/admin/RightPanel";
 import { newProductToOrder } from "@/@types/Order";
 import { useAuth } from "@/context/AuthContext";
-
+import { useSocket } from "@/context/SocketContext"
+import { toast } from 'sonner'
 
 type PanelMode = 'new-order' | 'create-product' | 'add-to-order'
 
@@ -26,7 +27,7 @@ function ProductsPage() {
     const [listProduct, setListProduct] = useState<Product[]>([])
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
     const { company } = useAuth();
-
+    const {socket} = useSocket()
 
     const handle = async () => {
         setIsLoading(true)
@@ -62,6 +63,28 @@ function ProductsPage() {
         handle()
     }, [company])
 
+    useEffect(() => {
+        if (!socket) return;
+
+        // Función que se ejecutará cuando llegue un nuevo producto
+        const handleNewProduct = (newProduct: Product) => {
+            // Actualizamos el estado de productos de forma segura,
+            // añadiendo el nuevo producto al principio de la lista.
+            setListProduct(prevList => [newProduct, ...prevList]);
+        };
+
+        // Suscribimos el componente al evento 'newProduct'
+        socket.on('newProduct', handleNewProduct);
+        
+
+        // Función de limpieza: Es CRUCIAL desuscribirse del evento
+        // cuando el componente se desmonte para evitar memory leaks.
+        return () => {
+            socket.off('newProduct', handleNewProduct);
+        };
+
+    }, [socket]);
+
     // Efecto para filtrar productos cuando cambia el término de búsqueda
     useEffect(() => {
         if (!searchTerm.trim()) {
@@ -70,8 +93,8 @@ function ProductsPage() {
         }
 
         const searchTermLower = searchTerm.toLowerCase();
-        const filtered = listProduct.filter(product => 
-            product.name.toLowerCase().includes(searchTermLower) || 
+        const filtered = listProduct.filter(product =>
+            product.name.toLowerCase().includes(searchTermLower) ||
             (product.barcode && product.barcode.toString().includes(searchTermLower))
         );
         setFilteredProducts(filtered);
@@ -97,19 +120,19 @@ function ProductsPage() {
         setShoppingCart(!shoppingCart)
     }
 
-    
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full p-8">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin">
-            <RefreshCcw className="h-8 w-8 text-green-700" />
-          </div>
-          <p className="text-gray-600">Cargando productos...</p>
-        </div>
-      </div>
-    );
-  }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-full p-8">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin">
+                        <RefreshCcw className="h-8 w-8 text-green-700" />
+                    </div>
+                    <p className="text-gray-600">Cargando productos...</p>
+                </div>
+            </div>
+        );
+    }
 
 
     return (
@@ -118,9 +141,9 @@ function ProductsPage() {
             <div className="md:p-3">
                 <div className="flex justify-between items-center gap-5 mb-2">
                     <div className="relative flex-1">
-                        <Input 
-                            className="bg-white p-2 pl-10 text-sm w-full" 
-                            placeholder="Buscar por nombre o código de barras..." 
+                        <Input
+                            className="bg-white p-2 pl-10 text-sm w-full"
+                            placeholder="Buscar por nombre o código de barras..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -145,7 +168,7 @@ function ProductsPage() {
                                 {searchTerm ? "No se encontraron productos" : "No hay productos"}
                             </h2>
                             <p className="text-gray-500 text-center max-w-md">
-                                {searchTerm 
+                                {searchTerm
                                     ? "No hay productos que coincidan con tu búsqueda. Intenta con otros términos."
                                     : "Esta compañía aún no tiene productos registrados. ¡Comienza agregando tu primer producto!"
                                 }
