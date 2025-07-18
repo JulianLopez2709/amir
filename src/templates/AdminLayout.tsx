@@ -25,7 +25,6 @@ function AdminLayout() {
 
         // Listener para nuevas órdenes
         const handleNewOrder = (order: Orden) => {
-            console.log('Notificación global: Nueva orden creada!', order);
             toast.success("Nueva Orden Creada", {
                 description: `La orden #${order.id.toString().substring(0, 8)} ha sido creada.`,
                 duration: 5000,
@@ -34,7 +33,6 @@ function AdminLayout() {
 
         // Listener para nuevos productos
         const handleNewProduct = (product: Product) => {
-            console.log('Notificación global: Nuevo producto creado!', product);
             toast.info("Nuevo Producto Disponible", {
                 description: `El producto "${product.name}" ha sido agregado.`,
                 duration: 5000,

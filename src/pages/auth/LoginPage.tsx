@@ -45,7 +45,6 @@ function LoginPage() {
         alert("Credenciales incorrectas.");
       }
     } catch (error) {
-      console.error('Error en login:', error);
       alert("Error en el login. Por favor intente nuevamente.");
     } finally {
       setIsLoading(false);

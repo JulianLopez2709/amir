@@ -80,7 +80,6 @@ function OrderPage() {
       setListOrder(response);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar las órdenes';
-      console.log("error", err)
       setError(errorMessage);
       /*toast({
         variant: "destructive",

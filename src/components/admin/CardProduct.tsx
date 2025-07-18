@@ -33,7 +33,7 @@ function CardProduct({ product, addClick, index }: CardProductProps) {
                     )
                 }
             </div>
-            <p className="font-bold" style={{ color : 'var(--primary-color)' }}>
+            <p className="font-bold" style={{ color: 'var(--primary-color)' }}>
                 {product.name}
             </p>
             <p className="text-sm text-gray-500 flex-1">
@@ -48,6 +48,18 @@ function CardProduct({ product, addClick, index }: CardProductProps) {
                     can {product.stock}
                 </p>
             </div>
+
+            {product.detail && Object.keys(product.detail).length > 0 && (
+                <div className="text-xs text-gray-700 my-2 space-y-1 border-t pt-2">
+                    {Object.entries(product.detail).map(([key, value]) => (
+                        <div key={key} className="flex justify-between">
+                            <span className="font-semibold capitalize">{key}:</span>
+                            <span>{String(value)}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
             {
                 product.stock != undefined && product.stock > 0 ? (
                     <div className="md:flex w-full items-center justify-between">
@@ -56,9 +68,9 @@ function CardProduct({ product, addClick, index }: CardProductProps) {
                             <p className="">{count}</p>
                             <p className=" p1 px-2 md:px-3 bg-white rounded-sm cursor-pointer" onClick={() => setCount((acount) => acount + 1)}>+</p>
                         </div>
-                        <Button className="cursor-pointer" style={{background : 'var(--primary-color)'}} variant="default" onClick={() => addClick(count)}>
+                        <Button className="cursor-pointer" style={{ background: 'var(--primary-color)' }} variant="default" onClick={() => addClick(count)}>
                             <p className='text-sm'>
-                                Agregar al carrito
+                                Agregar
                             </p>
                         </Button>
                     </div>

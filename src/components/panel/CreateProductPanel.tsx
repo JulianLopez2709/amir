@@ -1,9 +1,8 @@
 import { createProduct } from '@/api/product/getAllProductByCompany'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
-import { ImageIcon, ScanBarcode } from 'lucide-react'
+import { ImageIcon, PlusCircle, ScanBarcode, XCircle } from 'lucide-react'
 import { useState } from 'react'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@radix-ui/react-select'
 import { Switch } from '../ui/switch'
 import Product from '@/@types/Product'
 import { toast } from 'sonner'
@@ -11,7 +10,7 @@ import { useAuth } from '@/context/AuthContext'
 
 const initialProductState = (companyId: number): Product => ({
     name: '',
-    description: '',
+    description: undefined,
     price_selling: 0,
     price_cost: 0,
     barcode: undefined,
@@ -20,8 +19,14 @@ const initialProductState = (companyId: number): Product => ({
     is_favorite: false,
     categoryId: undefined,
     stock: undefined,
+    type: 'producto',
     stock_minimo: undefined
 });
+
+type Attribute = {
+    key: string;
+    value: string;
+};
 
 function CreateProductPanel() {
 
@@ -30,6 +35,9 @@ function CreateProductPanel() {
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [areStock, setAreStock] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [attributes, setAttributes] = useState<Attribute[]>([{ key: '', value: '' }]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -43,6 +51,25 @@ function CreateProductPanel() {
         } else {
             setProduct(prev => ({ ...prev, [name]: value }));
         }
+    };
+
+    const handleSelectChange = (field: keyof Product, value: string) => {
+        setProduct(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleAttributeChange = (index: number, field: keyof Attribute, value: string) => {
+        const newAttributes = [...attributes];
+        newAttributes[index][field] = value;
+        setAttributes(newAttributes);
+    };
+
+    const addAttribute = () => {
+        setAttributes([...attributes, { key: '', value: '' }]);
+    };
+
+    const removeAttribute = (index: number) => {
+        const newAttributes = attributes.filter((_, i) => i !== index);
+        setAttributes(newAttributes);
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,18 +88,28 @@ function CreateProductPanel() {
             return;
         }
 
+        setIsSubmitting(true);
+
+
+        const customAttributes = attributes.reduce((acc, attr) => {
+            if (attr.key) { // Solo añade si la clave no está vacía
+                acc[attr.key] = attr.value;
+            }
+            return acc;
+        }, {} as { [key: string]: string });
+
         const cleanedProduct = {
             ...product,
             price_cost: Number(product.price_cost),
+            detail: customAttributes,
             price_selling: Number(product.price_selling),
             stock: product.stock !== undefined ? Number(product.stock) : undefined,
             stock_minimo: product.stock_minimo !== undefined ? Number(product.stock_minimo) : undefined,
             companyId: company?.id || 0,
         };
+
         try {
-            console.log('product new reset', cleanedProduct)
-            const res = await createProduct(cleanedProduct);
-            console.log('responde api ', res)
+            await createProduct(cleanedProduct);
             // Resetea el formulario usando el estado inicial
             setProduct(initialProductState(company?.id || 0));
 
@@ -80,10 +117,14 @@ function CreateProductPanel() {
             setImageFile(null);
             setPreviewUrl(null);
             setAreStock(false);
+            setAttributes([{ key: '', value: '' }]);
 
             //setListProduct(prevList => [...prevList, response])
         } catch (err) {
             //setError((err as Error).message)
+        } finally {
+            setIsSubmitting(false);
+
         }
     }
 
@@ -120,14 +161,18 @@ function CreateProductPanel() {
                     <div className=' w-full flex flex-col gap-2'>
                         <div className='flex gap-2 h-9 items-center justify-between'>
                             <div className='flex gap-2'>
-                                <label htmlFor="stock" className='text-sm'>¿Maneja Stock?</label>
+                                <label htmlFor="stock" className='text-sm font-medium'>¿Maneja Stock?</label>
                                 <Switch id="airplane-mode" checked={areStock} onCheckedChange={changeStock} className='' />
                             </div>
-                            {
-                                areStock ? (
-                                    <Input name='stock' placeholder="Cantidad" value={product.stock} onChange={handleChange} type="number" className='w-1/2' />
-                                ) : (null)
-                            }
+                            <Input
+                                name='stock'
+                                placeholder="Cantidad"
+                                value={product.stock ?? ''}
+                                onChange={handleChange}
+                                type="number"
+                                className='w-1/2' // Opcional: puedes agregar estilos para cuando esté deshabilitado
+                                disabled={!areStock} // <-- La clave está aquí
+                            />
                         </div>
 
                         <Input
@@ -154,42 +199,97 @@ function CreateProductPanel() {
 
                 <div className='flex w-full gap-2'>
                     <div className='w-full'>
-                        <label htmlFor="price_cost" className='text-sm'>Pricio Costo</label>
+                        <label htmlFor="price_cost" className='text-sm font-medium'>Pricio Costo</label>
                         <Input name='price_cost' placeholder="$0" value={product.price_cost} onChange={handleChange} type="number" className='' required />
                     </div>
                     <div className='w-full'>
-                        <label htmlFor="price_selling" className='text-sm'>Pricio Venta</label>
+                        <label htmlFor="price_selling" className='text-sm font-medium'>Pricio Venta</label>
                         <Input name='price_selling' placeholder="$0" value={product.price_selling} onChange={handleChange} type="number" className='' required />
                     </div>
                 </div>
                 <div>
-                    <label htmlFor="description" className='text-sm'>Descripcion</label>
-                    <Input name='description' type='' placeholder="Descripción del producto" value={product.description} onChange={handleChange} className='' required />
+                    <label htmlFor="description" className='text-sm font-medium'>Descripcion</label>
+                    <Input name='description' type='' placeholder="Descripción del producto" value={product.description} onChange={handleChange} className='' />
                 </div>
 
-                <div className='w-full '>
-                    <Select>
-                        <SelectTrigger className="w-full text-start p-2 text-sm bg-white border-2 rounded-md">
-                            <SelectValue placeholder="tipo de Producto" />
-                        </SelectTrigger>
-                        <SelectContent className='bg-white p-2 border-2 rounded-md w-lg'>
-                            <SelectGroup className='w-full'>
-                                <SelectLabel className='w-full bg-black rounded-sm text-white text-center'>Tipos</SelectLabel>
-                                <SelectItem value="combo" className="w-full block">combo</SelectItem>
-                                <SelectItem value="producto" className="w-full block">producto</SelectItem>
-                                <SelectItem value="servicio" className="w-full block">servicio</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+                <div className=' flex w-full gap-2'>
+                    <div className='w-full'>
+                        <label className='text-sm font-medium'>Tipo de Producto</label>
+                        <select
+                            name="type"
+                            value={product.type}
+                            onChange={(e) => handleSelectChange('type', e.target.value)}
+                            className="w-full text-start p-2 text-sm bg-white border-2 rounded-md"
+                        >
+                            <option value="producto">Producto</option>
+                            <option value="servicio">Servicio</option>
+                            <option value="combo">Combo</option>
+                        </select>
+                    </div>
+                    <div className='w-full'>
+                        <label className='text-sm font-medium'>Unidad de Medida</label>
+                        <select
+                            name="unitOfMeasure"
+                            /*value={product.unitOfMeasure}*/
+                            /*onChange={(e) => handleSelectChange('unitOfMeasure', e.target.value)}*/
+                            className="w-full text-start p-2 text-sm bg-white border-2 rounded-md"
+                        >
+                            <option value="unidad">Unidad (Un)</option>
+                            <option value="kg">Kilogramo (Kg)</option>
+                            <option value="g">Gramo (g)</option>
+                            <option value="L">Litro (L)</option>
+                            <option value="mL">Mililitro (mL)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label className='text-sm font-medium'>Atributos Personalizados</label>
+                    {/* Contenedor principal con borde */}
+                    <div className='rounded-md border p-3'>
+                        <div className='max-h-40 space-y-2 overflow-y-auto pr-2'>
+                            {attributes.map((attr, index) => (
+                                <div key={index} className='flex items-center gap-2'>
+                                    <Input
+                                        placeholder="Atributo (ej. Color)"
+                                        value={attr.key}
+                                        onChange={(e) => handleAttributeChange(index, 'key', e.target.value)}
+                                        className='flex-1'
+                                    />
+                                    <Input
+                                        placeholder="Valor (ej. Rojo)"
+                                        value={attr.value}
+                                        onChange={(e) => handleAttributeChange(index, 'value', e.target.value)}
+                                        className='flex-1'
+                                    />
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeAttribute(index)}>
+                                        <XCircle className='h-5 w-5 text-red-500' />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Botón de añadir, ahora fuera de la zona de scroll */}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className='w-full mt-2' // Añadido margen superior
+                            onClick={addAttribute}
+                        >
+                            <PlusCircle className='h-4 w-4 mr-2' />
+                            Añadir Atributo
+                        </Button>
+                    </div>
                 </div>
 
 
                 <Button
                     variant="default"
                     type="submit"
-                    className="w-full bg-green-600 text-white py-6 rounded-md hover:bg-green-700"
+                    className="w-full bg-green-600 text-white py-6 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isSubmitting}
                 >
-                    Crear producto
+                    {isSubmitting ? 'Creando producto...' : 'Crear producto'}
                 </Button>
             </form>
 

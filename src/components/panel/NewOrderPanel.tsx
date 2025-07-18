@@ -25,9 +25,8 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
         setTotalPrice(newTotal);
     }, [productsAdded]);
 
-    const handleDeleteProduct = (productId?: number) => {
-        if (!productId) return;
-        setProductsAdded((prevProducts) => prevProducts.filter((product) => product.product.id !== productId));
+    const handleDeleteProduct = (indexToDelete: number) => {
+        setProductsAdded((prev) => prev.filter((_, index) => index !== indexToDelete));
     };
 
     const handleDeleteAllProducts = () => {
@@ -73,9 +72,9 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
             </div>
             <h3 className="font-bold text-lg">Orden Items {productsAdded.length}</h3>
             <p className={`text-sm text-end ${productsAdded.length < 1 ? "text-gray-200" : "text-red-500 cursor-pointer"}`} onClick={handleDeleteAllProducts}>Eliminar todos los productos</p>
-            
+
             {/* Lista de productos - Scrolleable */}
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto my-2 max-h-[400px]">
                 {productsAdded.map((p, index) => (
                     <div className="flex justify-between items-center gap-4 mb-3" key={index}>
                         <div className="size-10 bg-gray-100 rounded-md flex items-center justify-center">
@@ -84,21 +83,21 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
                         <div className="flex flex-col flex-1">
                             <p className="font-bold">{p.product.name}</p>
                             <p className="text-sm">{p.product.description}</p>
-                        </div>  
+                        </div>
                         <div className="flex flex-col items-end">
                             <p className="font-bold">x{p.acount}</p>
                             <p className="text-sm text-gray-500">${p.product.price_selling * p.acount}</p>
                         </div>
-                        <Trash 
-                            className="text-white bg-red-500 m-auto p-1 cursor-pointer hover:opacity-50" 
-                            onClick={() => handleDeleteProduct(p.product.id)} 
+                        <Trash
+                            className="text-white bg-red-500 m-auto p-1 cursor-pointer hover:opacity-50"
+                            onClick={() => handleDeleteProduct(index)}
                         />
                     </div>
                 ))}
             </div>
 
             {/* Footer con total y botón - Fijo en la parte inferior */}
-            <div className="mt-auto pt-4 border-t">
+            <div className="pt-4 border-t">
                 <div className="flex w-full justify-between items-center font-bold mb-3">
                     <div>
                         <p className="text-gray-500">Total productos: {productsAdded.reduce((acc, p) => acc + p.acount, 0)}</p>

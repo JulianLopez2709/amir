@@ -61,7 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
         } catch (error) {
-            console.error('Error loading user data:', error);
             // Limpiar el localStorage si hay datos corruptos
             localStorage.removeItem("user");
             localStorage.removeItem("companies");

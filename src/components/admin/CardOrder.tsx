@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 
 function CardOrder({ item, onClick, index }: { item: OrdenReques, onClick: () => void, index: number }) {
     const { user } = useAuth()
+    console.log(item)
     return (
         <div className='p-3 bg-white rounded-xl cursor-pointer hover:bg-gray-50' onClick={onClick}>
             <div className='flex  justify-between pb-4'>

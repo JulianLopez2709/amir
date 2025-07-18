@@ -44,7 +44,6 @@ function ProductsPage() {
             setListProduct(response)
             setFilteredProducts(response)
         } catch (err) {
-            console.error("Error loading products:", err);
             setListProduct([]);
             setFilteredProducts([]);
         } finally {

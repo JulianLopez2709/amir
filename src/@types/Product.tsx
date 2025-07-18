@@ -1,10 +1,10 @@
-type TypeProduct = "Combo" | "Producto" | "Servicio"
+type TypeProduct = "combo" | "producto" | "servicio"
 
 interface Product {
     id?: number,
     type?: TypeProduct,
     name: string,
-    description: string,
+    description?: string,
     price_selling: number,
     price_cost: number,
     stock?: number,
@@ -15,8 +15,7 @@ interface Product {
     is_favorite ?: boolean,
     categoryId ?: number,
     companyId: number
-
-    //"detail" ?: {},
+    detail ?: {},
     //"createAt": "2025-04-19T01:43:38.083Z",
 
 }
