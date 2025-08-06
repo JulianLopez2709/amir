@@ -18,6 +18,8 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
     const navigate = useNavigate()
     const { company } = useAuth();
     const [totalPrice, setTotalPrice] = useState(0);
+    const [isLoading, setIsLoading] = useState(false)
+
 
     // Calcular el total cada vez que cambian los productos
     useEffect(() => {
@@ -34,6 +36,7 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
     };
 
     async function createOrder(listaProducts: newProductToOrder[]) {
+        setIsLoading(true)
         if (listaProducts.length === 0) {
             toast.error("La orden no puede estar vacía");
             return;
@@ -62,6 +65,8 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
             toast.error("Error al crear la orden");
             console.error("Error creating order:", error);
         }
+
+        setIsLoading(false)
     }
 
     return (
@@ -107,13 +112,14 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
                         <p className="text-2xl text-green-700">${totalPrice.toFixed(2)}</p>
                     </div>
                 </div>
-                <Button 
-                    variant="default" 
-                    className={`${productsAdded.length < 1 ? "bg-gray-400" : "bg-green-700 cursor-pointer"} w-full p-7 font-bold`} 
+                <Button
+                    variant="default"
+                    className={`${productsAdded.length < 1 ? "bg-gray-400" : "bg-green-700 cursor-pointer"} w-full p-7 font-bold`}
                     onClick={() => createOrder(productsAdded)}
-                    disabled={productsAdded.length < 1}
+                    disabled={productsAdded.length < 1 || isLoading}
                 >
-                    Crear nueva orden
+                    {isLoading ? 'Creando orden...':'Crear nueva orden'}
+                    
                 </Button>
             </div>
         </div>

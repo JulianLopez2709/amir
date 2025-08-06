@@ -1,14 +1,14 @@
 type props = {
     name : string,
-    color : string
+    color : string,
+    bg?: string,
+    textColor ?: string
 }
 
-function Status({ name = "New", color = "purple" }:props) {
-    const bgColor = `bg-${color}-200`;
-    const textColor = `text-${color}-700`;
+function Status({ name = "New", color = "purple", bg = "purple", textColor = "purple" }:props) {
     return (
-        <div  className={`${bgColor}   px-5 rounded-lg`}>
-            <p className={`font-bold ${textColor}`}>{name}</p>
+        <div  className={`${bg}  px-5 rounded-lg`}>
+            <p className={`text-sm font-bold ${textColor}`}>{name}</p>
         </div>
     )
 }

@@ -3,11 +3,22 @@ import { Button } from '../ui/button'
 import { OrdenReques } from '@/@types/Order'
 import { BoxesIcon } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { STATUS_CONFIG } from '@/config/statusConfig'
+import { formatDate } from '@/config/utils'
 
 
-function CardOrder({ item, onClick, index }: { item: OrdenReques, onClick: () => void, index: number }) {
+interface CardOrderProps {
+    item: OrdenReques;
+    onClick: () => void;
+    index: number;
+}
+
+const CardOrder = ({ item, onClick, index }: CardOrderProps) => {
     const { user } = useAuth()
-    console.log(item)
+
+    const statusInfo = STATUS_CONFIG[item.status.toUpperCase()] || STATUS_CONFIG.DEFAULT;
+
+
     return (
         <div className='p-3 bg-white rounded-xl cursor-pointer hover:bg-gray-50' onClick={onClick}>
             <div className='flex  justify-between pb-4'>
@@ -20,12 +31,12 @@ function CardOrder({ item, onClick, index }: { item: OrdenReques, onClick: () =>
                         </p>
                     </div>
                     <div>
-                        <p className='font-bold'>{item.cliente_create}</p>
                         <p className='text-gray-500'>Pedido #{index}</p>
+                        <p className='text-gray-500 text-sm'>{formatDate(item.createAt)}</p>
                     </div>
                 </div>
                 <div>
-                    <Status color='purple' name={item.status} />
+                    <Status bg={statusInfo.tailwindClasses.bg} textColor={statusInfo.tailwindClasses.text} color={statusInfo.color} name={statusInfo.text} />
                 </div>
             </div>
             <div className='pb-4 flex flex-col gap-2'>

@@ -14,7 +14,7 @@ import Product from '@/@types/Product';
 function AdminLayout() {
     const location = useLocation()
     const navigate = useNavigate()
-    const { company, setCompany, primaryColor, secondaryColor, user, setUser, companies } = useAuth();
+    const { company, setCompany, primaryColor, secondaryColor, setUser, companies } = useAuth();
 
     const { socket } = useSocket();
 

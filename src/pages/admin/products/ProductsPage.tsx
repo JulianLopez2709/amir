@@ -10,7 +10,6 @@ import RightPanel from "@/components/admin/RightPanel";
 import { newProductToOrder } from "@/@types/Order";
 import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext"
-import { toast } from 'sonner'
 
 type PanelMode = 'new-order' | 'create-product' | 'add-to-order'
 
