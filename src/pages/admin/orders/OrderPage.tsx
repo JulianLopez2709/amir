@@ -1,5 +1,5 @@
 import { OrdenReques } from '@/@types/Order'
-import { getAllOrdersByCompany } from '@/api/order/getAllOrdersByCompany'
+import { getAllOrdersByCompany, updateOrderStatus } from '@/api/order/getAllOrdersByCompany'
 import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
@@ -76,20 +76,24 @@ function OrderPage() {
   };
 
   const handleFinishOrder = async () => {
+    if (!selectOrden) {
+      toast.error("No se ha seleccionado ninguna orden.");
+      return;
+    }
+
     if (!paymentMethod) {
-      // Mostrar error - se necesita seleccionar método de pago
+      toast.error("Por favor, seleccione un método de pago.");
       return;
     }
 
     try {
-      // Aquí iría la llamada a la API para finalizar la orden
-      // await finishOrder({
-      //   orderId: selectOrden?.id,
-      //   paymentMethod,
-      //   total: selectOrden?.total_price
-      // });
+      await updateOrderStatus(selectOrden.id, 'completed', paymentMethod);
+      toast.success("Orden finalizada exitosamente.");
+      fetchData(); // Volver a cargar los datos para reflejar el cambio
+      setDetail(false); // Opcional: cierra la vista de detalles
     } catch (error) {
       console.error('Error al finalizar la orden:', error);
+      toast.error("Error al finalizar la orden. Intente de nuevo.");
     }
   };
 
@@ -102,13 +106,34 @@ function OrderPage() {
       setListOrder(prevList => [newOrder, ...prevList]);
     };
 
-    // Suscribimos el componente al evento 'newOrder'
-    socket.on('newOrder', handleNewOrder);
+    // Listener para cambios de estado en las órdenes
+    const handleOrderStatusChange = (updatedOrder: OrdenReques) => {
+      setListOrder(prevList => {
+        // Busca la orden que fue actualizada por su ID
+        const index = prevList.findIndex(order => order.id === updatedOrder.id);
 
-    // Función de limpieza: Es CRUCIAL desuscribirse del evento
-    // cuando el componente se desmonte para evitar memory leaks.
+        // Si la encuentra, la reemplaza con la versión actualizada
+        if (index !== -1) {
+          const newList = [...prevList];
+          newList[index] = updatedOrder;
+          return newList;
+        }
+
+        // Si no la encuentra (por ejemplo, si la lista se carga por primera vez),
+        // podría simplemente devolver la lista anterior o agregarla.
+        // En este caso, la reemplazaremos para mantener el orden.
+        return prevList;
+      });
+    };
+
+    // Suscribimos el componente a ambos eventos
+    socket.on('newOrder', handleNewOrder);
+    socket.on('orderStatusChanged', handleOrderStatusChange);
+
+    // Función de limpieza: desuscribimos ambos eventos
     return () => {
       socket.off('newOrder', handleNewOrder);
+      socket.off('orderStatusChanged', handleOrderStatusChange);
     };
 
   }, [socket]);
@@ -129,6 +154,8 @@ function OrderPage() {
       }
       const response = await getAllOrdersByCompany(company.id);
       setListOrder(response);
+      console.log(response)
+      setSelectOrden(response[0])
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar las órdenes';
       setError(errorMessage);
@@ -145,6 +172,8 @@ function OrderPage() {
   const showDetail = () => {
     setDetail(!detail)
   }
+
+
 
   if (isLoading) {
     return (
@@ -243,62 +272,81 @@ function OrderPage() {
           <p className=''>Total ({selectOrden?.products?.length} items)</p>
           <p className='text-green-700 text-xl'>$ {selectOrden?.total_price}</p>
         </div>
-        {
-          shouldShowButtons && (
-            <div>
-              <div className='mb-4'>
-                <p className='font-bold mb-2'>Metodo de pago</p>
-                <div className='flex gap-5'>
-                  <Button
-                    variant="outline"
-                    className={`flex flex-col flex-1 items-center justify-center p-4 h-20 rounded-xl 
-                    ${paymentMethod === 'cash'
-                        ? 'bg-green-100 border-green-700 text-green-700'
-                        : 'hover:bg-green-100 hover:border-green-700 hover:text-green-700'}`}
-                    onClick={() => setPaymentMethod('cash')}
-                  >
-                    <CircleDollarSign className='size-8 mb-1' />
-                    <span className='text-sm'>Efectivo</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className={`flex flex-col flex-1 items-center justify-center p-4 h-20 rounded-xl
-                    ${paymentMethod === 'card'
-                        ? 'bg-green-100 border-green-700 text-green-700'
-                        : 'hover:bg-green-100 hover:border-green-700 hover:text-green-700'}`}
-                    onClick={() => setPaymentMethod('card')}
-                  >
-                    <CreditCard className='size-8 mb-1' />
-                    <span className='text-sm'>Tarjeta</span>
-                  </Button>
-                </div>
-              </div>
-
-              <div className='flex flex-col gap-2 mb-3'>
-                <Link to={`/admin/products?orden=${selectOrden?.id}`}>
-                  <Button variant="default" className='w-full bg-blue-600 font-bold mb-3 cursor-pointer'>
-                    Agregar un nuevo Producto
-                  </Button>
-                </Link>
+        {selectOrden && (
+          <div className="space-y-4">
+            {selectOrden.status === "new" && (
+              <div className="flex flex-col gap-2">
                 <Button
                   variant="default"
-                  className='bg-black text-white w-full cursor-pointer p-7'
+                  className="bg-green-500 text-white py-8 font-bold text-xl cursor-pointer"
+                //onClick={() => handleChangeStatus("En Proceso")}
+                >
+                  Orden Verificada
+                </Button>
+
+                <Button
+                  variant="destructive"
+                  className='cursor-pointer hover:opacity-80'
+                //onClick={() => handleChangeStatus("Cancelada")}
+                >
+                  Cancelar Orden
+                </Button>
+              </div>
+            )}
+
+            {selectOrden?.status === "in_progress" && (
+              <div className="flex flex-col gap-4">
+                <div className="mb-4">
+                  <p className="font-bold mb-2">Método de pago</p>
+                  <div className="flex gap-5">
+                    <Button
+                      variant="outline"
+                      className={`flex flex-col flex-1 items-center justify-center p-4 h-20 rounded-xl 
+            ${paymentMethod === 'cash'
+                          ? 'bg-green-100 border-green-700 text-green-700'
+                          : 'hover:bg-green-100 hover:border-green-700 hover:text-green-700'}`}
+                      onClick={() => setPaymentMethod('cash')}
+                    >
+                      <CircleDollarSign className="size-8 mb-1" />
+                      <span className="text-sm">Efectivo</span>
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      className={`flex flex-col flex-1 items-center justify-center p-4 h-20 rounded-xl 
+            ${paymentMethod === 'card'
+                          ? 'bg-green-100 border-green-700 text-green-700'
+                          : 'hover:bg-green-100 hover:border-green-700 hover:text-green-700'}`}
+                      onClick={() => setPaymentMethod('card')}
+                    >
+                      <CreditCard className="size-8 mb-1" />
+                      <span className="text-sm">Tarjeta</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  variant="default"
+                  className="bg-green-600 text-white p-4 font-bold"
                   onClick={handleFinishOrder}
                   disabled={!paymentMethod}
                 >
-                  <div>
-                    <p className='font-bold'>Orden Finalizada</p>
-                    <p className='text-sm'>
-                      {paymentMethod
-                        ? `Pago con ${paymentMethod === 'cash' ? 'efectivo' : 'tarjeta'}`
-                        : 'Seleccione método de pago'}
-                    </p>
-                  </div>
+                  Finalizar Orden
                 </Button>
               </div>
-            </div>
-          )
-        }
+            )}
+
+
+            {selectOrden.status === "completed" && (
+              <p className="text-green-700 font-bold">✅ Orden finalizada</p>
+            )}
+
+            {selectOrden.status === "canceled" && (
+              <p className="text-red-600 font-bold">❌ Orden cancelada</p>
+            )}
+          </div>
+        )}
+
 
 
 
@@ -381,6 +429,7 @@ function OrderPage() {
                   setDetail(true);
                 }}
                 index={index + 1}
+                selectOrden={selectOrden}
               />
             </li>
           ))}

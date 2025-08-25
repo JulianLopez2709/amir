@@ -184,7 +184,7 @@ function ProductsPage() {
                         <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] object-cover">
                             {filteredProducts.map((product, index) => (
                                 <li key={index} className="flex justify-center items-center">
-                                    <CardProduct product={product} addClick={(count) => addNewProduct(product, count)} index={index} />
+                                    <CardProduct product={product} addClick={(count) => addNewProduct(product, count)} index={index} editClick={()=>{}}/>
                                 </li>
                             ))}
                         </div>

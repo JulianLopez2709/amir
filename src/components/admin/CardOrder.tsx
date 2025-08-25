@@ -11,16 +11,18 @@ interface CardOrderProps {
     item: OrdenReques;
     onClick: () => void;
     index: number;
+    selectOrden: OrdenReques | null; 
 }
 
-const CardOrder = ({ item, onClick, index }: CardOrderProps) => {
+const CardOrder = ({ item, onClick, index,selectOrden  }: CardOrderProps) => {
     const { user } = useAuth()
 
     const statusInfo = STATUS_CONFIG[item.status.toUpperCase()] || STATUS_CONFIG.DEFAULT;
 
 
     return (
-        <div className='p-3 bg-white rounded-xl cursor-pointer hover:bg-gray-50' onClick={onClick}>
+        <div className={`p-3 bg-white rounded-xl cursor-pointer hover:bg-gray-50 
+                ${item.id === selectOrden?.id ? 'border-b-2 border-green-500' : ''}`}  onClick={onClick}>
             <div className='flex  justify-between pb-4'>
                 <div className='flex gap-3'>
                     <div className='rounded-full size-10 bg-gray-100 flex items-center justify-center'>

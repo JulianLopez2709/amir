@@ -24,3 +24,23 @@ export const createOrderByCompany = async (dataBody : createOrderBody) => {
  
     return response
 }
+
+
+export const updateOrderStatus = async (
+  orderId: number,
+  status: 'completed' | 'canceled' | 'expense',
+  paymentMethod?: 'cash' | 'card'
+) => {
+  const body = { status, paymentMethod };
+  
+  const response = await apiFetch<OrdenReques>(`order/${orderId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+
+  if (!response) {
+    throw new Error('No response from server');
+  }
+
+  return response;
+};
