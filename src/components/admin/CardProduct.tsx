@@ -22,6 +22,7 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
     return (
         <div className="bg-white rounded-2xl flex flex-col h-full w-full" >
             <div className='p-3 h-full flex flex-col'>
+                <p>{product.stock_records?.id}</p>
 
                 <div className="flex justify-between items-center gap-2">
                     <p className='font-bold text-xl'>{index + 1}</p>
@@ -48,7 +49,7 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
                     </p>
 
                     <p className="text-sm  opacity-70">
-                        can {product.stock}
+                        can {product.stock_records?.quantity}
                     </p>
                 </div>
 
@@ -64,7 +65,7 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
                 )}
 
                 {
-                    product.stock != undefined && product.stock > 0 ? (
+                    product.stock_records != undefined && product.stock_records.quantity > 0 ? (
                         <div className="md:flex w-full items-center justify-between">
                             <div className="w-1/3 flex justify-between items-center rounded-sm gap-2 font-bold p-1" style={{ background: 'var(--primary-color)' }}>
                                 <p className=" p1 px-2 md:px-3 bg-white rounded-sm cursor-pointer" onClick={() => setCount((acount) => acount > 1 ? acount - 1 : acount)}>-</p>

@@ -33,6 +33,9 @@ const router = createBrowserRouter([
                         index: true, element: <DashboardPage />
                     },
                     {
+                        path : "/company"
+                    },
+                    {
                         path: "/products",
                         element: <ProductsPage />
                     },
