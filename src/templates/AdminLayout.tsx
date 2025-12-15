@@ -10,16 +10,19 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react"
 import Orden from '@/@types/Order';
 import Product from '@/@types/Product';
+import { changeCompany } from "@/api/auth/login"
 
 function AdminLayout() {
     const location = useLocation()
     const navigate = useNavigate()
 
-    const { company, setCompany, primaryColor, secondaryColor, setUser, companies } = useAuth();
+    const { company, setCompany, primaryColor, secondaryColor, setUser, companies, user } = useAuth();
 
     const { socket } = useSocket();
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isChangingCompany, setIsChangingCompany] = useState(false);
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
     // ✨ ¡Aquí está la magia!
     // Este useEffect se encargará de las notificaciones globales
@@ -71,6 +74,47 @@ function AdminLayout() {
 
     const otherCompanies = companies || [];
 
+    const handleChangeCompany = async (companySelected: any) => {
+        if (company?.id === companySelected.id) return;
+
+        try {
+            setIsChangingCompany(true);
+
+            // 🔐 Petición al backend
+            const response = await changeCompany(companySelected.id);
+
+            // 1️⃣ Guardar nuevo token
+            Cookies.set("token", response.token, { expires: 1 / 2 }); // 12h
+
+            // 2️⃣ Actualizar compañía en contexto
+            setCompany({
+                ...companySelected,
+                role: response.company.role,
+            });
+
+            // 3️⃣ Actualizar usuario si viene actualizado
+            if (response.user) {
+                setUser(response.user);
+                localStorage.setItem("user", JSON.stringify(response.user));
+            }
+
+            toast.success("Compañía cambiada correctamente");
+
+            // 4️⃣ Redirigir y resetear sockets / vistas
+            navigate("/admin", { replace: true });
+
+        } catch (error: any) {
+            toast.error(
+                error?.response?.data?.message ||
+                "No tienes permisos para esta compañía"
+            );
+        } finally {
+            setIsChangingCompany(false);
+            setIsPopoverOpen(false);
+        }
+    };
+
+
     const handleLogout = () => {
         // Clear auth state
         setUser(null);
@@ -94,9 +138,22 @@ function AdminLayout() {
         navigate('/', { replace: true });
     };
 
-    return (
 
+    return (
         <SocketProvider>
+
+            {
+                isChangingCompany && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                        <div className="bg-white rounded-xl p-6 flex flex-col items-center gap-3 shadow-xl">
+                            <div className="h-10 w-10 border-4 border-gray-200 border-t-green-500 rounded-full animate-spin" />
+                            <p className="text-sm font-medium text-gray-700">
+                                Verificando permisos y cambiando compañía...
+                            </p>
+                        </div>
+                    </div>
+                )
+            }
 
             <div className="h-screen flex flex-col">
                 <header className=" border-gray-100 p-1 md:px-5 md:py-3 flex items-center">
@@ -108,6 +165,7 @@ function AdminLayout() {
                         lg:hidden 
                         ${isSidebarOpen ? 'fixed inset-y-0 left-0 z-40 block' : ''} 
                         h-auto static
+                        flex items-center justify-center
                         transition-transform duration-300 ease-in-out
                     `}
                     >
@@ -115,8 +173,8 @@ function AdminLayout() {
                     </Button>
                     <div className="flex justify-between items-center flex-1">
 
-                        <Popover >
-                            <PopoverTrigger className="min-w-74">
+                        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                            <PopoverTrigger className="min-w-74" >
                                 <div className="flex text-xl gap-5 w-full justify-between items-center cursor-pointer hover:bg-gray-100 hover:rounded-sm transition-all duration-300 md:p-0 p-1">
                                     <div className={`w-10 h-10 rounded-xl`}
                                         style={{ background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`, }}>
@@ -135,10 +193,11 @@ function AdminLayout() {
                                     {otherCompanies.map((companies) => (
                                         <div
                                             key={companies.id}
-                                            className="flex items-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer"
+                                            className={`flex items-center p-2 rounded-lg cursor-pointer ${isChangingCompany ? 'opacity-50 pointer-events-none' : 'hover:bg-gray-100'}`}
                                             onClick={() => {
-                                                //hace el cambio de compañia tiene que hacelo y mirar el token y validar los permisos
-                                                setCompany(companies);
+                                                //hace el cambio de compañia y validar los permisos
+                                                handleChangeCompany(companies)
+                                                setIsPopoverOpen(false);
                                             }}
                                         >
                                             <div className={`w-10 h-10 rounded-xl`}
@@ -178,19 +237,14 @@ function AdminLayout() {
                     <div className="">
 
                         <div
-                            className={`
-                            ${isSidebarOpen ? 'fixed left-0 z-40 ' : 'hidden'}
-                            lg:static lg:block 
-                            transition-all  duration-300
+                            className={` ${isSidebarOpen ? 'fixed left-0 z-40 ' : 'hidden'}
+                            lg:static lg:block h-[92vh] transition-all  duration-300 
                         `}
                         >
 
                             <nav
-                                className="
-                             flex flex-col justify-between
-                                border-r border-gray-100 
-                                shadow-xl lg:shadow-none
-                                  bg-white h-screen
+                                className="flex flex-col border-r border-gray-100 items-center
+                                shadow-xl lg:shadow-none h-full bg-white
                                 transition-all duration-300
                             "
                             >
@@ -218,15 +272,18 @@ function AdminLayout() {
                                     </Link>
 
                                 </div>
-                                <div className="w-full">
-                                    <Button
-                                        onClick={handleLogout}
-                                        className="cursor-pointer w-full h-full items-center text-white rounded-none py-7 font-bold hover:opacity-80 transition-all duration-300"
-                                        style={{ background: 'var(--primary-color)' }}
-                                    >
-                                        <LogOut className="" />
-                                        <span>Salir</span>
-                                    </Button>
+                                <div className="w-full flex flex-col flex-1 ">
+                                    <div className="mt-auto">
+                                        <Button
+                                            onClick={handleLogout}
+                                            className="cursor-pointer w-full h-auto items-center text-white rounded-none py-7 font-bold hover:opacity-80 transition-all duration-300"
+                                            style={{ background: 'var(--primary-color)' }}
+                                        >
+                                            <LogOut className="" />
+                                            <span>Salir</span>
+
+                                        </Button>
+                                    </div>
                                 </div>
                             </nav>
 

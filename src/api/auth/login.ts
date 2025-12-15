@@ -31,3 +31,18 @@ export const login = async (identifier:string, password:string): Promise<LoginRe
  
     return response
 }
+
+
+export const changeCompany = async (companyId:number): Promise<any>=> {
+    console.log("ID: ",companyId)
+    const response = await apiFetch<any>(`auth/select_company`, {
+        method: 'POST',
+        body: JSON.stringify({companyId}),
+    })
+    console.log("responde by api: ",response)
+    if (!response) {
+        throw new Error('No response from server')
+    }
+ 
+    return response
+}

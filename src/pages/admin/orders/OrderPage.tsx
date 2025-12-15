@@ -154,7 +154,6 @@ function OrderPage() {
       }
       const response = await getAllOrdersByCompany(company.id);
       setListOrder(response);
-      console.log(response)
       setSelectOrden(response[0])
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar las órdenes';
