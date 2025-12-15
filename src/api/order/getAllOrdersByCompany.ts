@@ -2,7 +2,7 @@ import { createOrderBody, OrdenReques } from "@/@types/Order"
 import apiFetch from "../client"
 
 export const getAllOrdersByCompany = async (companyId:number) => {
-    const response = await apiFetch<OrdenReques[]>(`order/${companyId}`)
+    const response = await apiFetch<OrdenReques>(`order/company/${companyId}`)
     if (!response) {
         throw new Error('No response from server')
     }

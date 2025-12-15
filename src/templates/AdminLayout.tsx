@@ -290,7 +290,7 @@ function AdminLayout() {
                         </div>
                     </div>
 
-                    <main className="flex-1 bg-[#EFEFEF] overflow-y-auto p-1">
+                    <main className="flex-1 bg-[#EFEFEF] overflow-y-auto">
                         <Outlet />
                     </main>
                 </div>

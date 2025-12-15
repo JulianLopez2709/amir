@@ -1,6 +1,6 @@
 import Status from './Status'
 import { Button } from '../ui/button'
-import { OrdenReques } from '@/@types/Order'
+import { OrdenReques, Order } from '@/@types/Order'
 import { BoxesIcon } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { STATUS_CONFIG } from '@/config/statusConfig'
@@ -8,10 +8,10 @@ import { formatDate } from '@/config/utils'
 
 
 interface CardOrderProps {
-    item: OrdenReques;
+    item: Order;
     onClick: () => void;
     index: number;
-    selectOrden: OrdenReques | null; 
+    selectOrden: Order | null; 
 }
 
 const CardOrder = ({ item, onClick, index,selectOrden  }: CardOrderProps) => {
@@ -49,8 +49,8 @@ const CardOrder = ({ item, onClick, index,selectOrden  }: CardOrderProps) => {
                                 <BoxesIcon className='size-7 text-gray-500' />
                             </div>
                             <div>
-                                <p className='font-bold'>{p.product?.name}</p>
-                                <p>${p.product?.price_selling}</p>
+                                <p className='font-bold'>{p.product_snapshot?.name}</p>
+                                <p>${p.product_snapshot?.price}</p>
                             </div>
                         </div>
 

@@ -1,4 +1,4 @@
-import { OrdenReques } from '@/@types/Order'
+import { OrdenReques, Order, OrderProduct } from '@/@types/Order'
 import { getAllOrdersByCompany, updateOrderStatus } from '@/api/order/getAllOrdersByCompany'
 import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
@@ -30,8 +30,8 @@ function OrderPage() {
   const { company } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [listOrder, setListOrder] = useState<OrdenReques[]>([]);
-  const [selectOrden, setSelectOrden] = useState<OrdenReques | null>(null);
+  const [listOrder, setListOrder] = useState<Order[]>([]);
+  const [selectOrden, setSelectOrden] = useState<Order | null>(null);
   const [detail, setDetail] = useState(false);
   const { socket } = useSocket()
 
@@ -42,10 +42,10 @@ function OrderPage() {
   const [newExpense, setNewExpense] = useState({ price: '', description: '' });
   const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
 
-  const shouldShowButtons =
-    selectOrden?.status !== 'completed' &&
+  /*const shouldShowButtons =
+    selectOrden?.data[0].status !== 'completed' &&
     selectOrden?.status !== 'canceled' &&
-    selectOrden?.status !== 'expense';
+    selectOrden?.status !== 'expense';*/
 
   const handleExpenseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -87,7 +87,7 @@ function OrderPage() {
     }
 
     try {
-      await updateOrderStatus(selectOrden.id, 'completed', paymentMethod);
+      //await updateOrderStatus(selectOrden.id, 'completed', paymentMethod);
       toast.success("Orden finalizada exitosamente.");
       fetchData(); // Volver a cargar los datos para reflejar el cambio
       setDetail(false); // Opcional: cierra la vista de detalles
@@ -101,14 +101,14 @@ function OrderPage() {
     if (!socket) return;
 
     // Función que se ejecutará cuando llegue un nuevo producto
-    const handleNewOrder = (newOrder: OrdenReques) => {
+    const handleNewOrder = (newOrder: Order) => {
       // añadiendo la nueva orden al principio de la lista.
       setListOrder(prevList => [newOrder, ...prevList]);
     };
 
     // Listener para cambios de estado en las órdenes
     const handleOrderStatusChange = (updatedOrder: OrdenReques) => {
-      setListOrder(prevList => {
+      /*setListOrder(prevList => {
         // Busca la orden que fue actualizada por su ID
         const index = prevList.findIndex(order => order.id === updatedOrder.id);
 
@@ -123,7 +123,7 @@ function OrderPage() {
         // podría simplemente devolver la lista anterior o agregarla.
         // En este caso, la reemplazaremos para mantener el orden.
         return prevList;
-      });
+      });*/
     };
 
     // Suscribimos el componente a ambos eventos
@@ -138,6 +138,15 @@ function OrderPage() {
 
   }, [socket]);
 
+  /*
+  
+  
+  
+  
+  
+  
+  
+  */
   useEffect(() => {
     fetchData();
     setSelectOrden(null);
@@ -153,8 +162,8 @@ function OrderPage() {
         return;
       }
       const response = await getAllOrdersByCompany(company.id);
-      setListOrder(response);
-      setSelectOrden(response[0])
+      setListOrder(response.data);
+      //setSelectOrden(response[0])
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar las órdenes';
       setError(errorMessage);
@@ -209,7 +218,7 @@ function OrderPage() {
         py-2 px-2 lg:px-3
         h-[95vh] flex-col bg-white
       `}>
-
+        
         <div className='flex justify-between items-center mb-2'>
           <div className='flex-col'>
             <h2 className='font-bold '>
@@ -243,7 +252,7 @@ function OrderPage() {
             <p>Imprimir Factura</p>
           </Button>
           </div>
-          */
+          //va comentaddo */
         }
 
         <p className='font-bold text-lg mb-3 flex-shrink-0 text-gray-700'>Items ({selectOrden?.products?.length})</p>
@@ -257,11 +266,11 @@ function OrderPage() {
                     <BoxesIcon className='size-7 text-gray-500' />
                   </div>
                   <div className='flex-2 flex-col'>
-                    <p className='font-bold'>{p.product?.name}</p>
-                    <p className='text-sm'>{p.product?.description}</p>
+                    <p className='font-bold'>{p.product_snapshot.name}</p>
+                    <p className='text-sm'>{/*p.product_snapshot?.description*/}</p>
                   </div>
-                  <p className='font-bold text-center flex-1'>{p.quantity}</p>
-                  <p className='font-bold'>${p.product?.price_selling}</p>
+                  <p className='font-bold text-center flex-1'>{/*p.product_snapshot.quantity*/}</p>
+                  <p className='font-bold'>${p.product_snapshot.price}</p>
                 </div>
               ))
             }
@@ -345,8 +354,6 @@ function OrderPage() {
             )}
           </div>
         )}
-
-
 
 
 
@@ -444,12 +451,12 @@ function OrderPage() {
               <div className="flex items-center gap-2">
                 <BoxesIcon className="h-6 w-6" />
                 <div className="flex flex-col">
-                  <span className="font-semibold">Pedido #{selectOrden.id.toString().split("-")[0]}</span>
-                  <span className="text-sm text-gray-500">{selectOrden.products?.length || 0} productos</span>
+                  <span className="font-semibold">Pedido #{/*selectOrden.id.toString().split("-")[0]*/}</span>
+                  <span className="text-sm text-gray-500">{/*selectOrden.products?.length || 0*/} productos</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold">${selectOrden.total_price}</span>
+                <span className="font-bold">${/*selectOrden.total_price*/}</span>
                 <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
                   Ver Detalles
                 </div>
