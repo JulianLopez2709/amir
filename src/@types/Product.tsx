@@ -8,6 +8,7 @@ interface Product {
     price_selling: number,
     price_cost: number,
     stock_records?: Stock,
+    manage_stock: boolean,
     imgUrl?: string,
     barcode ?: number,
     stock_minimo ?: number,
@@ -44,6 +45,13 @@ interface VariantOption {
     name: string,
     extraPrice: number,
     variantId: number,
+}
+
+
+
+export interface SelectedVariant {
+  variantId: number
+  optionIds: number[]
 }
 
 export default Product

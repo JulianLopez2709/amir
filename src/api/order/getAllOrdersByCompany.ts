@@ -1,4 +1,4 @@
-import { createOrderBody, OrdenReques } from "@/@types/Order"
+import { CreateOrderBody, OrdenReques } from "@/@types/Order"
 import apiFetch from "../client"
 
 export const getAllOrdersByCompany = async (companyId:number) => {
@@ -12,9 +12,9 @@ export const getAllOrdersByCompany = async (companyId:number) => {
 
 
 
-export const createOrderByCompany = async (dataBody : createOrderBody) => {
+export const createOrderByCompany = async (dataBody : CreateOrderBody) => {
    
-    const response = await apiFetch<createOrderBody>(`order/`, {
+    const response = await apiFetch<CreateOrderBody>(`order/`, {
         method: 'POST',
         body: JSON.stringify(dataBody),
     })

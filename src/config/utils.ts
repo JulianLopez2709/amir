@@ -1,7 +1,7 @@
-export const formatDate = (dateString?:string) => {
+export const formatDate = (dateString?: string) => {
   // Crea un objeto Date a partir del string
-  if(dateString == undefined) return
-  
+  if (dateString == undefined) return
+
   const date = new Date(dateString);
 
   // Obtiene los componentes de la fecha y hora
@@ -12,5 +12,6 @@ export const formatDate = (dateString?:string) => {
   const minutes = date.getMinutes().toString().padStart(2, '0');
 
   // Construye el formato deseado
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
+  `${year}-${month}-${day} ${hours}:${minutes}`
+  return { data: `${year}-${month}-${day}`, time: `${hours}:${minutes}` };
 };

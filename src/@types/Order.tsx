@@ -1,6 +1,6 @@
 import Product from "./Product";
 
-type Status = "new" | "proceso" | "terminado"  | "cancelado"
+type Status = "new" | "proceso" | "terminado" | "cancelado"
 
 export interface OrdenReques {
   total: number
@@ -31,6 +31,11 @@ export interface OrderDetail {
 }
 
 export interface OrderProduct {
+  id: number,
+  status: string,
+  quantity: number,
+  subtotal: number,
+  notes: string,
   product_snapshot: {
     id: string
     name: string
@@ -49,41 +54,75 @@ export interface ProductOption {
 }
 
 
-export interface OrdenRequesOld{
-    cliente_create : string,
-    id : string,
-    status : string,
-    products ?: Product_Orden[],
-    //metodo_pago : string,
-    total_price : number
-    createAt : string,
-    company : any,
+export interface OrdenRequesOld {
+  cliente_create: string,
+  id: string,
+  status: string,
+  products?: ProductToOrder[],
+  //metodo_pago : string,
+  total_price: number
+  createAt: string,
+  company: any,
 }
 
-export interface Product_Orden{
-    product ?: Product,
-    status : Status,
-    notes : string,
-    quantity : number
-    productId ?: number
+export interface ProductToOrder {
+  product: Product
+  quantity: number
+  notes?: string
+  selectedOptions: SelectedVariant[]
 }
 
-interface Orden{
-    id:number,
-    total_price:number,
-    status : Status
-    
+export interface SelectedVariant {
+  options: Option[]
+  variantName: string
 }
 
-export interface createOrderBody{
-    total_price: number,
-    companyId: number,
-    products: Product_Orden[]
+interface Option {
+  name: string
+  optionId: number
+  extraPrice?: number
 }
+
+export interface SelectedVariantBody {
+  optionIds: number[] // selección múltiple
+  variant?: {
+    nombre: string
+    opciotes: []
+  }
+}
+
+
+interface Orden {
+  id: number,
+  total_price: number,
+  status: Status
+
+}
+
+export interface CreateOrderBody {
+  companyId: number,
+  detail: {
+    cliente?: {
+      nombre: string
+      telefono: string
+    },
+    metodo_pago: string
+    notas?: string
+  },
+  products: {
+    productId: string
+    quantity: number
+    notes?: string
+    selectedOptions: number[]
+  }[]
+}
+
+
 
 export interface newProductToOrder {
-    product: Product,
-    acount: number
+  product: Product,
 }
+
+
 
 export default Orden;
