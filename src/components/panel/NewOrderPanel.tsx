@@ -3,7 +3,7 @@ import { Button } from "../ui/button"
 import { BoxesIcon, X } from "lucide-react"
 import { newProductToOrder, CreateOrderBody, ProductToOrder } from "@/@types/Order"
 import { toast } from "sonner";
-import { createOrderByCompany } from "@/api/order/getAllOrdersByCompany";
+import { createOrderByCompany, updateOrder, updateOrderStatus } from "@/api/order/getAllOrdersByCompany";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
@@ -12,9 +12,11 @@ import { ScrollArea } from "../ui/scroll-area";
 interface Props {
     productsAdded: ProductToOrder[];
     setProductsAdded: React.Dispatch<React.SetStateAction<ProductToOrder[]>>;
+    mode: "create" | "edit"
+    orderId?: string
 }
 
-function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
+function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props) {
     const navigate = useNavigate()
     const { company } = useAuth();
     const [totalPrice, setTotalPrice] = useState(0);
@@ -39,47 +41,52 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
         setProductsAdded([]);
     };
 
-    async function createOrder(listaProducts: ProductToOrder[]) {
-        setIsLoading(true)
-        if (listaProducts.length === 0) {
-            toast.error("La orden no puede estar vacía");
-            return;
-        }
 
+
+    async function submitOrder() {
+        if (productsAdded.length === 0) {
+            toast.error("La orden no puede estar vacía")
+            return
+        }
 
         if (!company?.id) {
-            toast.error("Compañía no válida");
-            return;
+            toast.error("Compañía no válida")
+            return
         }
 
-        setIsLoading(true);
+        setIsLoading(true)
 
         const orderBody: CreateOrderBody = {
             companyId: company.id,
             detail: {
                 metodo_pago: "Efectivo",
-                notas: "Orden creada desde el panel"
-                // cliente: { nombre, telefono } ← si luego lo agregas
+                notas: mode === "edit"
+                    ? "Orden actualizada desde el panel"
+                    : "Orden creada desde el panel",
             },
-            products: listaProducts.map(mapProductToBackend)
-        };
-
-
-        try {
-            const res = await createOrderByCompany(orderBody);
-            if (!res) {
-                throw new Error("Error al crear la orden");
-            }
-            toast.success("Orden creada con éxito");
-            setProductsAdded([]);
-            navigate("/admin/orders");
-        } catch (error) {
-            toast.error("Error al crear la orden");
-            console.error("Error creating order:", error);
+            products: productsAdded.map(mapProductToBackend)
         }
 
-        setIsLoading(false)
+        try {
+            if (mode === "create") {
+                await createOrderByCompany(orderBody)
+                toast.success("Orden creada con éxito")
+            } else {
+                if (!orderId) throw new Error("Order ID requerido")
+                await updateOrder(orderId, orderBody) // 👈 TU API PUT/PATCH
+                toast.success("Orden actualizada con éxito")
+            }
+
+            setProductsAdded([])
+            navigate("/admin/orders")
+        } catch (error) {
+            toast.error("Error al guardar la orden")
+            console.error(error)
+        } finally {
+            setIsLoading(false)
+        }
     }
+
 
     const mapProductToBackend = (p: ProductToOrder): CreateOrderBody["products"][number] => {
         if (!p.product.id) {
@@ -112,7 +119,7 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
     return (
         <div className="flex flex-col h-full">
             <div className="flex justify-between w-full">
-                <h2 className="font-bold text-xl">Nueva Orden</h2>
+                <h2 className="font-bold text-xl">{mode === "edit" ? "Editar Orden" : "Nueva Orden"}</h2>
                 <Status name="new" color="purple" />
             </div>
             <h3 className="font-bold text-lg">Orden Items {productsAdded.length}</h3>
@@ -177,7 +184,7 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
 
                                 {/*Nota y total*/}
                                 <div className="flex justify-between items-center gap-2">
-                                    <input name="nota" id="" placeholder="Agregar una nota" className="bg-white rounded-sm ite items-center text-center justify-center flex-1 h-auto shadow p-1"/>
+                                    <input name="nota" id="" placeholder="Agregar una nota" className="bg-white rounded-sm ite items-center text-center justify-center flex-1 h-auto shadow p-1" />
                                     <p className="font-bold text-green-700">
                                         ${calculateSubtotal(p).toFixed(2)}
                                     </p>
@@ -206,10 +213,20 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
                 <Button
                     variant="default"
                     className={`${productsAdded.length < 1 ? "bg-gray-400" : "bg-green-700 cursor-pointer"} w-full p-7 font-bold`}
-                    onClick={() => createOrder(productsAdded)}
+                    onClick={() => submitOrder}
                     disabled={productsAdded.length < 1 || isLoading}
                 >
-                    {isLoading ? 'Creando orden...' : 'Crear nueva orden'}
+                    <Button
+                        className="w-full p-7 font-bold bg-green-700"
+                        onClick={submitOrder}
+                        disabled={productsAdded.length < 1 || isLoading}
+                    >
+                        {isLoading
+                            ? "Guardando..."
+                            : mode === "edit"
+                                ? "Actualizar orden"
+                                : "Crear nueva orden"}
+                    </Button>
 
                 </Button>
             </div>

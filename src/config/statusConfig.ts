@@ -1,6 +1,6 @@
 export interface StatusConfig {
     text: string;
-    color: 'purple' | 'orange' | 'blue' | 'green' | 'red' | 'gray';
+    color: 'purple' | 'orange' | 'blue' | 'green' | 'red' | 'gray' | 'black';
     tailwindClasses: {
         bg: string;
         text: string;
@@ -19,12 +19,12 @@ export const STATUS_CONFIG: Record<string, StatusConfig> = {
         }
     },
     PENDING: {
-        text: 'Nuevo',
-        color: 'purple',
+        text: 'Pendiente por confirmar',
+        color: 'black',
         tailwindClasses: {
-            bg: 'bg-purple-100',
-            text: 'text-purple-800',
-            border: 'border-purple-500',
+            bg: 'bg-black',
+            text: 'text-white',
+            border: 'border-black',
         }
     },
     IN_PROGRESS: {

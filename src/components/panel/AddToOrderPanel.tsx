@@ -1,14 +1,19 @@
-import { newProductToOrder } from '@/@types/Order';
-import React from 'react'
+import { newProductToOrder, ProductToOrder } from '@/@types/Order';
+import { getOrderById } from '@/api/order/getAllOrdersByCompany';
+import React, { useEffect } from 'react'
 
 interface Props {
-  productsAdded: newProductToOrder[];
+  productsAdded: ProductToOrder[];
 }
 
 
 function AddToOrderPanel({ productsAdded }: Props) {
+  console.log("lo que recibo ", productsAdded)
+  
+
   return (
     <div>
+      <p>{productsAdded.toString()}</p>
       AddToOrderPanel
       <div className="flex flex-col h-full justify-between items-center">
         <div className="flex flex-col w-full mb-3">
@@ -20,7 +25,7 @@ function AddToOrderPanel({ productsAdded }: Props) {
                   <p>{p.product.name}</p>
                   <p>{p.product.description}</p>
                 </div>
-                <p>{p.acount}</p>
+                <p>{ }</p>
                 <p>${p.product.price_cost}</p>
                 x
               </div>

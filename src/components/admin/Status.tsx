@@ -5,7 +5,7 @@ type props = {
     textColor ?: string
 }
 
-function Status({ name = "New", color = "purple", bg = "purple", textColor = "purple" }:props) {
+function Status({ name = "Pendiente por confirmar", color = "white", bg = "black", textColor = "white" }:props) {
     return (
         <div  className={`${bg}  px-5 rounded-sm`}>
             <p className={`font-bold ${textColor}`}>{name}</p>

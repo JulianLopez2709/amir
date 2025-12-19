@@ -12,13 +12,17 @@ export interface OrdenReques {
 
 export interface Order {
   id: string
-  status: 'new' | 'in_progress' | 'completed' | 'canceled'
+  status: 'new' | 'in_progress' | 'completed' | 'canceled' | 'pending'
   total_price: number
   createAt: string
   updatedAt: string
   companyId: number
   detail?: OrderDetail
   products: OrderProduct[]
+}
+
+export interface OrderStatus {
+  status: 'new' | 'in_progress' | 'completed' | 'canceled' | 'pending'
 }
 
 export interface OrderDetail {

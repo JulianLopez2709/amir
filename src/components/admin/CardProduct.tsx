@@ -145,7 +145,7 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
                     </div>
                     <Separator className='mb-1' />
                     {product.variants?.map((v) => (
-                        <div className='flex gap-1 items-center'>
+                        <div className='md:flex gap-1 items-center'>
                             <p className='font-bold'>{v.name}</p>
                             <div className='flex mb-1 gap-2'>
 

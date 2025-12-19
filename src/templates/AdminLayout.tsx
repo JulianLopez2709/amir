@@ -290,7 +290,7 @@ function AdminLayout() {
                         </div>
                     </div>
 
-                    <main className="flex-1 bg-[#EFEFEF]">
+                    <main className="flex-1 bg-[#00000010]">
                         <Outlet />
                     </main>
                 </div>

@@ -7,18 +7,19 @@ import { useEffect, useState } from "react";
 import Product from "@/@types/Product";
 import { getAllProductByCompany } from "@/api/product/getAllProductByCompany";
 import RightPanel from "@/components/admin/RightPanel";
-import { newProductToOrder, ProductToOrder, SelectedVariant } from "@/@types/Order";
+import { newProductToOrder, Order, OrderProduct, ProductToOrder, SelectedVariant } from "@/@types/Order";
 import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext"
+import { getOrderById } from "@/api/order/getAllOrdersByCompany";
 
-type PanelMode = 'new-order' | 'create-product' | 'add-to-order'
+type PanelMode = 'order' | 'create-product';
 
 function ProductsPage() {
     const [searchParams] = useSearchParams();
     const ordenId = searchParams.get("orden");
     const isEditingOrder = Boolean(ordenId);
 
-    const [modePanelRight, setModePanelRight] = useState<PanelMode>('new-order')
+    const [modePanelRight, setModePanelRight] = useState<PanelMode>('order')
     const [shoppingCart, setShoppingCart] = useState(false)
     const [listProductsAdded, setListProductsAdded] = useState<ProductToOrder[]>([])
     const [searchTerm, setSearchTerm] = useState("")
@@ -50,9 +51,88 @@ function ProductsPage() {
         }
     }
 
+
+    /*const mappedProducts: ProductToOrder[] = order.products.map((p: OrderProduct) => {
+        const variantsMap: Record<string, SelectedVariant> = {}
+
+        p.product_snapshot.optionsSelected.forEach(opt => {
+            if (!variantsMap[opt.variantName]) {
+                variantsMap[opt.variantName] = {
+                    variantName: opt.variantName,
+                    options: []
+                }
+            }
+
+            variantsMap[opt.variantName].options.push({
+                optionId: opt.optionId,
+                name: opt.optionName,
+                extraPrice: opt.extraPrice
+            })
+        })
+
+        return {
+            product: {
+                id: p.product_snapshot.id,
+                name: p.product_snapshot.name,
+                price_cost: p.product_snapshot.price,
+                description: "",
+            },
+            quantity: p.quantity,
+            notes: p.notes,
+            selectedOptions: Object.values(variantsMap),
+        }
+    })*/
+
+
+    useEffect(() => {
+        if (!ordenId) return;
+
+        const loadOrder = async () => {
+            const order = await getOrderById(ordenId);
+
+            const mappedProducts: ProductToOrder[] = order.products.map(p => {
+                const variantsMap: Record<string, SelectedVariant> = {};
+
+                p.product_snapshot.optionsSelected.forEach(opt => {
+                    if (!variantsMap[opt.variantName]) {
+                        variantsMap[opt.variantName] = {
+                            variantName: opt.variantName,
+                            options: []
+                        };
+                    }
+
+                    variantsMap[opt.variantName].options.push({
+                        optionId: opt.optionId,
+                        name: opt.optionName,
+                        extraPrice: opt.extraPrice
+                    });
+                });
+
+                return {
+                    product: {
+                        id: p.product_snapshot.id,
+                        name: p.product_snapshot.name,
+                        price_cost: p.product_snapshot.price,
+                        description: "",
+                    } as any, // 👈 snapshot
+                    quantity: p.quantity,
+                    notes: p.notes,
+                    selectedOptions: Object.values(variantsMap),
+                };
+            });
+
+            setListProductsAdded(mappedProducts);
+        };
+
+        loadOrder();
+    }, [ordenId]);
+
+
+
+
     useEffect(() => {
         if (isEditingOrder) {
-            setModePanelRight("add-to-order");
+            setModePanelRight("order");
             setShoppingCart(true);
         }
     }, [ordenId]);
@@ -138,7 +218,7 @@ function ProductsPage() {
             return [...prev, productToOrder]
         })
 
-        setModePanelRight(isEditingOrder ? "add-to-order" : "new-order")
+        setModePanelRight("order")
     }
 
 
@@ -249,6 +329,8 @@ function ProductsPage() {
                     productsAdded={listProductsAdded}
                     setProductsAdded={setListProductsAdded}
                     onClose={() => setShoppingCart(false)}
+                    orderMode={isEditingOrder ? "edit" : "create"}
+                    orderId={ordenId ?? undefined}
                 />
             </div>
         </div>

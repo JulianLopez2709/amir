@@ -97,7 +97,7 @@ function OrderPage() {
     }
 
     try {
-      //await updateOrderStatus(selectOrden.id, 'completed', paymentMethod);
+      await updateOrderStatus(selectOrden.id, 'completed'/*, paymentMethod*/);
       toast.success("Orden finalizada exitosamente.");
       fetchData(); // Volver a cargar los datos para reflejar el cambio
     } catch (error) {
@@ -105,6 +105,19 @@ function OrderPage() {
       toast.error("Error al finalizar la orden. Intente de nuevo.");
     }
   };
+
+  async function changeOrderStatus(
+    order: Order,
+    newStatus: 'completed' | 'canceled' | 'expense' | 'pending' | 'in_progress'
+  ) {
+    try {
+      await updateOrderStatus(order.id, newStatus)
+      toast.success(`Orden actualizada a ${STATUS_CONFIG[newStatus].text}`)
+      fetchData()
+    } catch (error) {
+      toast.error("Error al actualizar el estado")
+    }
+  }
 
   useEffect(() => {
     if (!socket) return;
@@ -225,7 +238,7 @@ function OrderPage() {
   }
 
   return (
-    <div className='relative lex flex-col h-full w-full'>
+    <div className='relative flex flex-col h-full w-full'>
       {/* Panel derecho - Lista de pedidos */}
       <Sheet
         open={isSheetOpen}
@@ -293,11 +306,11 @@ function OrderPage() {
                   className="w-full bg-green-600"
                   disabled={!paymentMethod}
                   onClick={async () => {
-                    /*await updateOrderStatus(
-                      selectedOrder!.id,
+                    await updateOrderStatus(
+                      selectOrden!.id,
                       'completed',
-                      paymentMethod
-                    );*/
+                      //paymentMethod
+                    )
                     toast.success("Orden finalizada");
                     closeSheet();
                     fetchData();
@@ -317,73 +330,94 @@ function OrderPage() {
       </Sheet>
 
       {/* Dialog de gasto - encabezado*/}
-      <div className='h-16 flex w-full justify-between items-center px-4'>
-        <h2 className='font-bold md:text-2xl'>Lista de Pedidos</h2>
-        <div className='flex gap-2'>
-          {/* --- DIALOG PARA AGREGAR GASTO --- */}
-          <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className='text-white bg-red-600 hover:bg-red-700'>+ Agregar Gasto</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <form onSubmit={handleExpenseSubmit}>
-                <DialogHeader>
-                  <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
-                  <DialogDescription>
-                    Registra un nuevo gasto para la compañía. Haz clic en guardar cuando termines.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="price" className="text-right">
-                      Precio
-                    </label>
-                    <Input
-                      id="price"
-                      name="price"
-                      type="number"
-                      placeholder="$0.00"
-                      value={newExpense.price}
-                      onChange={handleExpenseChange}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="description" className="text-right">
-                      Descripción
-                    </label>
-                    <Input
-                      id="description"
-                      name="description"
-                      placeholder="Ej: Compra de insumos"
-                      value={newExpense.description}
-                      onChange={handleExpenseChange}
-                      className="col-span-3"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="outline">Cancelar</Button>
-                  </DialogClose>
-                  <Button type="submit" disabled={isSubmittingExpense}>
-                    {isSubmittingExpense ? 'Guardando...' : 'Guardar Gasto'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-          {/* --- FIN DEL DIALOG --- */}
+      <div className='px-2 md:px-4 flex flex-col gap-1 pb-2'>
 
-          <Link to="/admin/products?orden">
-            <Button variant="default" className='h-full w-full cursor-pointer bg-green-700'>+ Nuevo Pedido</Button>
-          </Link>
+        <div className=' flex w-full justify-between items-center'>
+          <h2 className='font-bold md:text-2xl'>Lista de Pedidos</h2>
+          <p>Miercoles, 18 Agosto 2025</p>
+        </div>
+        <div className='md:flex justify-between gap-1'>
+
+          <div className='flex gap-2'>
+            {/* --- DIALOG PARA AGREGAR GASTO --- */}
+            <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className='text-white bg-red-600 hover:bg-red-700'>- <p className='hidden md:flex'> Agregar Gasto</p></Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <form onSubmit={handleExpenseSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
+                    <DialogDescription>
+                      Registra un nuevo gasto para la compañía. Haz clic en guardar cuando termines.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label htmlFor="price" className="text-right">
+                        Precio
+                      </label>
+                      <Input
+                        id="price"
+                        name="price"
+                        type="number"
+                        placeholder="$0.00"
+                        value={newExpense.price}
+                        onChange={handleExpenseChange}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label htmlFor="description" className="text-right">
+                        Descripción
+                      </label>
+                      <Input
+                        id="description"
+                        name="description"
+                        placeholder="Ej: Compra de insumos"
+                        value={newExpense.description}
+                        onChange={handleExpenseChange}
+                        className="col-span-3"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button type="button" variant="outline">Cancelar</Button>
+                    </DialogClose>
+                    <Button type="submit" disabled={isSubmittingExpense}>
+                      {isSubmittingExpense ? 'Guardando...' : 'Guardar Gasto'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+            {/* --- FIN DEL DIALOG --- */}
+
+            <Link to="/admin/products?orden">
+              <Button variant="default" className='h-full w-full cursor-pointer bg-green-700'>+ Nuevo Pedido</Button>
+            </Link>
+          </div>
+          <div className='flex gap-2'>
+            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-green-800 text-white'>
+              <p className='cursor-pointer'>Todos</p>
+            </div>
+            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-white '>
+              <p className='cursor-pointer '>Por confirmar</p>
+            </div>
+            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-white'>
+              <p className='cursor-pointer '>En proceso</p>
+            </div>
+            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-white'>
+              <p className='cursor-pointer '>Finalizada</p>
+            </div>
+          </div>
         </div>
       </div>
       {/*NOTA: ARREGLAR EL BACKEND PARA QUE ME DEVUELVA UN ORDEN ESPECIFICO SOLO HAY UNA VARIANTE 
       Y ESTA TIENE MUCHAS OPCIONES. */ }
       {/* lista de ordenes  */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 p-4 overflow-y-auto h-full">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-4 overflow-y-auto h-[80vh]">
         {listOrder.map((orden, index) => (
           <li key={index} className='list-none'>
             <CardOrder
