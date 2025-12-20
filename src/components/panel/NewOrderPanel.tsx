@@ -137,8 +137,16 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
                                 onClick={() => handleDeleteProduct(index)}
                             />
 
-                            <div className="hidden sm:flex size-20 bg-gray-100 rounded-md  items-center justify-center border-2 border-gray-400">
-                                <BoxesIcon className="size-16 text-gray-500" />
+                            <div className="hidden sm:flex size-20 rounded-md overflow-hidden border-4 border-gray-400 bg-gray-100">
+                                {p.product.imgUrl ? (
+                                    <img
+                                        src={p.product.imgUrl}
+                                        alt={p.product.name}
+                                        className="w-full h-full object-cover block"
+                                    />
+                                ) : (
+                                    <BoxesIcon className="text-gray-400 size-10" />
+                                )}
                             </div>
 
                             <div className="flex flex-col flex-1 gap-2">

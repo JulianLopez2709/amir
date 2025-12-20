@@ -4,6 +4,25 @@ import Product from "@/@types/Product";
 import { BoxesIcon, Edit3 } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { ProductToOrder, SelectedVariant } from '@/@types/Order';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreVertical, Trash2, PlusSquare, Pencil } from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
+import { addedStock } from '@/api/product/StockProduct';
+
 
 type CardProductProps = {
     product: Product;
@@ -17,12 +36,43 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
     const [count, setCount] = useState(1)
     const [selectedOptions, setSelectedOptions] = useState<SelectedVariant[]>([])
 
-    const generateId = (id: number) => {
+    const generateId = (id: string) => {
         const newId = String(id).split("-")[0]
         return newId
     }
 
 
+    const [openStockDialog, setOpenStockDialog] = useState(false)
+
+    const [stockForm, setStockForm] = useState({
+        quantityChange: 0,
+        manage_stock: product.manage_stock ?? false,
+        //allow_out_of_stock: product.allow_out_of_stock ?? false,
+    })
+
+    const handleAddStock = async () => {
+        if (stockForm.quantityChange <= 0) return;
+
+        try {
+            await addedStock(
+                product.id!,
+                stockForm.quantityChange
+            );
+
+            // 🔥 cerrar modal
+            setOpenStockDialog(false);
+
+            // 🔄 reset del formulario
+            setStockForm(prev => ({
+                ...prev,
+                quantityChange: 0,
+            }));
+
+            // ⚠️ aquí luego podemos refrescar el producto
+        } catch (error) {
+            console.error("❌ Error ajustando stock:", error);
+        }
+    };
 
 
     const toggleOption = (variant: any, option: any) => {
@@ -99,19 +149,62 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
             <div className='h-full flex flex-col'>
 
                 <div className=" relative h-48  w-full bg-gray-100 flex items-center justify-center">
-                    <div className='rounded-2xl'>
-                        {
-                            product.imgUrl && /* ?(
-                                <img src={product.imgUrl} alt={product.name} className="w-full h-full object-cover" />
-                            ) :*/ (
-                                <BoxesIcon className="text-sm text-gray-500 size-10" />
-                            )
-                        }
+                    <div className="relative h-48 w-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                        {product.imgUrl ? (
+                            <img
+                                src={product.imgUrl}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <BoxesIcon className="text-gray-400 size-10" />
+                        )}
                     </div>
 
-                    <div className='w-7 h-7 border-2 rounded-sm absolute bg-white top-2 right-2 '>
+                    <div className="absolute top-2 right-2 z-10">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button className="w-7 h-7 flex items-center justify-center rounded-sm bg-white border hover:bg-gray-100">
+                                    <MoreVertical size={16} />
+                                </button>
+                            </DropdownMenuTrigger>
 
+                            <DropdownMenuContent align="end" className="w-44">
+
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        setOpenStockDialog(true)
+                                    }}
+                                >
+                                    <PlusSquare className="mr-2 h-4 w-4" />
+                                    Agregar stock
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        editClick()
+                                    }}
+                                >
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Editar producto
+                                </DropdownMenuItem>
+
+                                <DropdownMenuSeparator />
+
+                                <DropdownMenuItem
+                                    className="text-red-600 focus:text-red-600"
+                                    onClick={() => {
+                                        console.log("Eliminar producto", product.id)
+                                    }}
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Eliminar
+                                </DropdownMenuItem>
+
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
+
                 </div>
                 <div className='p-2'>
 
@@ -206,7 +299,7 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
                     }
                 </div>
 
-            </div>
+            </div >
             {
                 /*
                                 <div className='flex items-center justify-center p-3 bg-blue-950 w-full h-auto font-bold cursor-pointer gap-3 text-white' onClick={editClick}>
@@ -215,8 +308,98 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
                             </div>
                             */
             }
+
+            {/**
+             * Ajuste del producto
+             * agregar stock
+             */}
+            <Dialog open={openStockDialog} onOpenChange={setOpenStockDialog}>
+                <DialogContent className="sm:max-w-[420px]">
+                    <DialogHeader>
+                        <DialogTitle>Ajustes de stock</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+
+                        {/* Cantidad disponible */}
+                        {/* Stock actual */}
+                        <div className="flex justify-between items-center bg-gray-100 p-2 rounded">
+                            <p className="text-sm font-medium">Stock actual</p>
+                            <p className="font-bold">
+                                {product.stock_records?.quantity ?? 0} unidades
+                            </p>
+                        </div>
+
+                        {/* Cantidad a agregar */}
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium">
+                                Cantidad a agregar
+                            </p>
+                            <Input
+                                type="number"
+                                min={1}
+                                value={stockForm.quantityChange}
+                                onChange={(e) =>
+                                    setStockForm({
+                                        ...stockForm,
+                                        quantityChange: Number(e.target.value),
+                                    })
+                                }
+                                placeholder="Ej: 10"
+                            />
+                            <p className="text-xs text-gray-500">
+                                Esta cantidad se sumará al stock actual
+                            </p>
+                        </div>
+
+                        {/* Switch: seguimiento }
+                        <div className="flex items-center justify-between">
+                            <p>Hacer seguimiento de cantidad</p>
+                            <Switch
+                                checked={stockForm.manage_stock}
+                                onCheckedChange={(value) =>
+                                    setStockForm({
+                                        ...stockForm,
+                                        manage_stock: value,
+                                    })
+                                }
+                            />
+                        </div>
+
+                        {/* Switch: permitir sin stock }
+                        <div className="flex items-center justify-between">
+                            <p>Permitir compra cuando esté agotado</p>
+                            <Switch
+                                checked={true}
+                                onCheckedChange={(value) =>
+                                    setStockForm({
+                                        ...stockForm,
+                                        //allow_out_of_stock: value,
+                                    })
+                                }
+                                disabled={!stockForm.manage_stock}
+                            />
+                        </div>
+                        {   Switch: permitir sin stock */}
+                    </div>
+
+                    <DialogFooter className="mt-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setOpenStockDialog(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleAddStock}>
+                            Guardar cambios
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div >
     )
 }
+
+
 
 export default CardProduct

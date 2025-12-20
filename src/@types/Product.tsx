@@ -1,7 +1,7 @@
 type TypeProduct = "combo" | "producto" | "servicio"
 
 interface Product {
-    id?: number,
+    id?: string,
     type?: TypeProduct,
     name: string,
     description?: string,

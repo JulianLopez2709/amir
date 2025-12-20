@@ -18,7 +18,9 @@ const initialProductState = (companyId: number): Product => ({
     avaliable: true,
     is_favorite: false,
     categoryId: undefined,
-    stock: undefined,
+    //stock: undefined,
+    //esto lo cambio hay que ponerle cuidad
+    manage_stock : true,
     type: 'producto',
     stock_minimo: undefined
 });
@@ -103,7 +105,7 @@ function CreateProductPanel() {
             price_cost: Number(product.price_cost),
             detail: customAttributes,
             price_selling: Number(product.price_selling),
-            stock: product.stock !== undefined ? Number(product.stock) : undefined,
+            //stock: product.stock !== undefined ? Number(product.stock) : undefined,
             stock_minimo: product.stock_minimo !== undefined ? Number(product.stock_minimo) : undefined,
             companyId: company?.id || 0,
         };
@@ -167,7 +169,7 @@ function CreateProductPanel() {
                             <Input
                                 name='stock'
                                 placeholder="Cantidad"
-                                value={product.stock ?? ''}
+                                value={0}
                                 onChange={handleChange}
                                 type="number"
                                 className='w-1/2' // Opcional: puedes agregar estilos para cuando esté deshabilitado
