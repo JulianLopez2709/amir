@@ -2,11 +2,13 @@ import { createProduct } from '@/api/product/getAllProductByCompany'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { ImageIcon, PlusCircle, ScanBarcode, XCircle } from 'lucide-react'
-import { useState } from 'react'
+import { isValidElement, useState } from 'react'
 import { Switch } from '../ui/switch'
 import Product from '@/@types/Product'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
+import { ScrollArea } from '../ui/scroll-area'
+import { CreateProductPayload } from '@/@types/order/api/CreateProduct'
 
 const initialProductState = (companyId: number): Product => ({
     name: '',
@@ -20,15 +22,27 @@ const initialProductState = (companyId: number): Product => ({
     categoryId: undefined,
     //stock: undefined,
     //esto lo cambio hay que ponerle cuidad
-    manage_stock : true,
+    manage_stock: true,
     type: 'producto',
-    stock_minimo: undefined
+    stock_minimo: 1,
+    unit: 'unidad', // ✅ DEFAULT
 });
 
 type Attribute = {
     key: string;
     value: string;
 };
+
+type VariantOption = {
+    name: string
+    extraPrice: number
+}
+
+type Variant = {
+    name: string            // Ej: Color, Talla
+    options: VariantOption[] // Ej: Azul, Rojo
+}
+
 
 function CreateProductPanel() {
 
@@ -38,6 +52,7 @@ function CreateProductPanel() {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [areStock, setAreStock] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [variants, setVariants] = useState<Variant[]>([])
 
     const [attributes, setAttributes] = useState<Attribute[]>([{ key: '', value: '' }]);
 
@@ -54,6 +69,122 @@ function CreateProductPanel() {
             setProduct(prev => ({ ...prev, [name]: value }));
         }
     };
+
+    const handleVariantNameChange = (index: number, value: string) => {
+        const copy = [...variants]
+        copy[index].name = value
+        setVariants(copy)
+    }
+
+    const handleOptionChange = (
+        variantIndex: number,
+        optionIndex: number,
+        field: "name" | "extraPrice",
+        value: string | number
+    ) => {
+        const copy = [...variants]
+        // @ts-ignore
+        copy[variantIndex].options[optionIndex][field] = value
+        setVariants(copy)
+
+        // 🔥 Auto crear input vacío
+        if (
+            field === "name" &&
+            value !== "" &&
+            optionIndex === copy[variantIndex].options.length - 1
+        ) {
+            copy[variantIndex].options.push({ name: "", extraPrice: 0 })
+            setVariants([...copy])
+        }
+    }
+
+    const addVariant = () => {
+        setVariants([
+            ...variants,
+            { name: "", options: [{ name: "", extraPrice: 0 }] }
+        ])
+    }
+
+    const removeVariant = (index: number) => {
+        setVariants(variants.filter((_, i) => i !== index))
+    }
+
+    const buildVariantsPayload = () => {
+        return variants
+            .filter(v => v.name.trim() !== "")
+            .map(v => ({
+                name: v.name,
+                type: "select",
+                options: v.options
+                    .filter(o => o.name.trim() !== "")
+                    .map(o => ({
+                        name: o.name,
+                        extraPrice: Number(o.extraPrice) || 0
+                    }))
+            }))
+    }
+
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+
+        // 🔴 VALIDACIÓN DE VARIANTES
+        const hasInvalidVariants = variants.some(
+            v =>
+                v.options.some(o => o.name.trim() !== "") &&
+                v.name.trim() === ""
+        )
+
+        if (hasInvalidVariants) {
+            toast.error("El nombre de la opción es obligatorio.")
+            return
+        }
+
+        // otras validaciones
+        if (product.price_cost > product.price_selling) {
+            toast.error("El precio de costo no puede ser mayor al precio de venta.")
+            return
+        }
+
+        setIsSubmitting(true)
+        try {
+            console.log("PRODUCTO A CREAR:", product)
+            const payload: CreateProductPayload = {
+                name: product.name,
+                description: product.description,
+                companyId: company?.id || 0,
+                type: "producto", // ✅ FIX CLAVE
+                unit: product.unit ?? "unidad",    // ✅ blindaje extra
+                barcode: product.barcode ? String(product.barcode) : undefined,
+                imgUrl: "", // imágenes después
+                price_cost: Number(product.price_cost),
+                price_selling: Number(product.price_selling),
+                stock: Number(product.stock_minimo),
+                available: true,
+                variants: buildVariantsPayload()
+            }
+
+            await createProduct(payload)
+
+            toast.success("Producto creado correctamente")
+
+            console.log("PAYLOAD A ENVIAR:", payload)
+
+            // RESET
+            setProduct(initialProductState(company?.id || 0))
+            setVariants([])
+            setPreviewUrl(null)
+            setImageFile(null)
+            setAreStock(false)
+
+        } catch (error) {
+            toast.error("Error al crear el producto")
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+
 
     const handleSelectChange = (field: keyof Product, value: string) => {
         setProduct(prev => ({ ...prev, [field]: value }));
@@ -82,7 +213,7 @@ function CreateProductPanel() {
         }
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    /*const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (product.price_cost > product.price_selling) {
@@ -128,73 +259,96 @@ function CreateProductPanel() {
             setIsSubmitting(false);
 
         }
-    }
-
-    const changeStock = () => {
-        setAreStock(!areStock)
-    }
-
+    }*/
 
     return (
         <div className=''>
             <form onSubmit={handleSubmit} className="space-y-2">
                 <div className='flex w-full gap-2'>
-                    <label className="relative cursor-pointer w-40 h-32 rounded-xl overflow-hidden border border-gray-300 shadow-md group hover:opacity-80 transition">
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="hidden"
-                        />
+                    <div className="flex flex-col items-center gap-1">
+                        <label className="relative cursor-pointer w-40 h-40 rounded-xl overflow-hidden border border-gray-300 shadow-md group">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="hidden"
+                            />
 
-                        <div className="absolute h-full w-full bg-black bg-opacity-40 text-black text-center text-xs  transition">
+                            {/* Imagen o placeholder */}
                             {previewUrl ? (
-                                <div>
-                                    <img src={previewUrl as string} alt="preview" className="object-cover h-32 w-40" />
-                                    <ImageIcon className="absolute top-0 p-8 text-black  w-full h-full opacity-40 hover:bg-white " size={20} />
-                                </div>
+                                <img
+                                    src={previewUrl}
+                                    alt="preview"
+                                    className="w-full h-full object-cover"
+                                />
                             ) : (
                                 <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-400 text-sm">
                                     Subir imagen
                                 </div>
                             )}
-                        </div>
-                    </label>
+
+                            {/* Overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition">
+                                <ImageIcon className="text-white" size={32} />
+                            </div>
+                        </label>
+
+                        <p className="text-center text-xs text-gray-500">
+                            PNG, JPG · Máx 25MB
+                        </p>
+                    </div>
+
+
                     <div className=' w-full flex flex-col gap-2'>
-                        <div className='flex gap-2 h-9 items-center justify-between'>
-                            <div className='flex gap-2'>
+                        <div className='w-full'>
+                            {/*<div className='flex gap-2'>
                                 <label htmlFor="stock" className='text-sm font-medium'>¿Maneja Stock?</label>
                                 <Switch id="airplane-mode" checked={areStock} onCheckedChange={changeStock} className='' />
-                            </div>
+                            </div>*/}
+                            <label htmlFor="stock_minimo" className="text-sm font-medium">
+                                Cantidad
+                            </label>
                             <Input
-                                name='stock'
+                                name="stock_minimo"
                                 placeholder="Cantidad"
-                                value={0}
-                                onChange={handleChange}
                                 type="number"
-                                className='w-1/2' // Opcional: puedes agregar estilos para cuando esté deshabilitado
-                                disabled={!areStock} // <-- La clave está aquí
+                                min={1}
+                                value={product.stock_minimo}
+                                onChange={handleChange}
+                                required
+                            />
+
+                        </div>
+
+                        <div className="w-full">
+                            <label htmlFor="name" className="text-sm font-medium">
+                                Nombre del producto
+                            </label>
+                            <Input
+                                id="name"
+                                name="name"
+                                placeholder="Nombre del producto"
+                                onChange={handleChange}
+                                value={product.name}
+                                required
                             />
                         </div>
 
-                        <Input
-                            name="name"
-                            placeholder="Nombre del producto"
-                            onChange={handleChange}
-                            value={product.name}
-                            required
-                        />
-
-                        <div className="relative">
+                        <div className="w-full relative">
+                            <label htmlFor="barcode" className="text-sm font-medium">
+                                Código del producto
+                            </label>
                             <Input
+                                id="barcode"
                                 name="barcode"
                                 placeholder="Código del producto"
                                 value={product.barcode}
                                 onChange={handleChange}
                                 className="pr-10"
                             />
-                            <ScanBarcode className="absolute right-2 top-2.5 text-gray-500 pointer-events-none r" size={20} />
+                            <ScanBarcode className="absolute right-2 top-9 text-gray-500 pointer-events-none" size={20} />
                         </div>
+
                     </div>
 
                 </div>
@@ -244,44 +398,85 @@ function CreateProductPanel() {
                         </select>
                     </div>
                 </div>
-
+                {/**
+                 * Atributos personalizados variantes y sus opciones
+                 */}
                 <div>
-                    <label className='text-sm font-medium'>Atributos Personalizados</label>
                     {/* Contenedor principal con borde */}
-                    <div className='rounded-md border p-3'>
-                        <div className='max-h-40 space-y-2 overflow-y-auto pr-2'>
-                            {attributes.map((attr, index) => (
-                                <div key={index} className='flex items-center gap-2'>
-                                    <Input
-                                        placeholder="Atributo (ej. Color)"
-                                        value={attr.key}
-                                        onChange={(e) => handleAttributeChange(index, 'key', e.target.value)}
-                                        className='flex-1'
-                                    />
-                                    <Input
-                                        placeholder="Valor (ej. Rojo)"
-                                        value={attr.value}
-                                        onChange={(e) => handleAttributeChange(index, 'value', e.target.value)}
-                                        className='flex-1'
-                                    />
-                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeAttribute(index)}>
-                                        <XCircle className='h-5 w-5 text-red-500' />
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
+                    <div className="rounded-md border p-3 space-y-3">
+                        <h3 className="font-medium">Atributos Personalizados</h3>
+                        <p className="text-sm text-gray-500">
+                            Si tu producto tiene variaciones de color, tamaño, etc.
+                        </p>
+                        <ScrollArea className=' flex flex-col gap-2 max-h-80 mb-1'>
+                            <div className='flex flex-col gap-1'>
 
-                        {/* Botón de añadir, ahora fuera de la zona de scroll */}
+                                {variants.map((variant, vIndex) => (
+                                    <div key={vIndex} className="border rounded-md p-3 space-y-2">
+
+                                        {/* Nombre de variante */}
+                                        <Input
+                                            placeholder="Nombre de la opción (ej: Color)"
+                                            value={variant.name}
+                                            onChange={(e) =>
+                                                handleVariantNameChange(vIndex, e.target.value)
+                                            }
+                                        />
+
+                                        {/* Opciones */}
+                                        <div className="space-y-2">
+                                            {variant.options.map((opt, oIndex) => (
+                                                <div key={oIndex} className="flex gap-2">
+                                                    <Input
+                                                        placeholder="Valor (ej: Azul)"
+                                                        value={opt.name}
+                                                        onChange={(e) =>
+                                                            handleOptionChange(vIndex, oIndex, "name", e.target.value)
+                                                        }
+                                                    />
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="$ Extra"
+                                                        value={opt.extraPrice}
+                                                        onChange={(e) =>
+                                                            handleOptionChange(
+                                                                vIndex,
+                                                                oIndex,
+                                                                "extraPrice",
+                                                                Number(e.target.value)
+                                                            )
+                                                        }
+                                                        className="w-32"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Eliminar variante */}
+                                        <Button
+                                            variant="outline"
+                                            className="text-red-600"
+                                            onClick={() => removeVariant(vIndex)}
+                                        >
+                                            Eliminar
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
+
+                        {/* Agregar variante */}
                         <Button
                             type="button"
                             variant="outline"
-                            className='w-full mt-2' // Añadido margen superior
-                            onClick={addAttribute}
+                            className="w-full"
+                            onClick={addVariant}
                         >
-                            <PlusCircle className='h-4 w-4 mr-2' />
-                            Añadir Atributo
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Agregar otra opción
                         </Button>
                     </div>
+
                 </div>
 
 

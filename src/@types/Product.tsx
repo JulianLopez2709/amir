@@ -15,7 +15,8 @@ interface Product {
     avaliable ?: boolean,
     is_favorite ?: boolean,
     categoryId ?: number,
-    companyId: number
+    companyId: number,
+    unit ?: string
     detail ?: {},
     variants ?: Variant[]
     //"createAt": "2025-04-19T01:43:38.083Z",

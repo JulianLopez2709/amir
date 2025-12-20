@@ -1,5 +1,6 @@
 import Product from "@/@types/Product"
 import apiFetch from "../client"
+import { CreateProductPayload } from "@/@types/order/api/CreateProduct"
 
 
 export const getAllProductByCompany = async (companyId: number) => {
@@ -11,8 +12,8 @@ export const getAllProductByCompany = async (companyId: number) => {
     return response
 }
 
-export const createProduct = async ( product: Product) => {
-    const response = await apiFetch<Product>(`product/`, {
+export const createProduct = async ( product: CreateProductPayload) => {
+    const response = await apiFetch<any>(`product/`, {
         method: 'POST',
         body: JSON.stringify(product),
     })

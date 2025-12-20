@@ -1,5 +1,4 @@
-import { newProductToOrder, ProductToOrder } from "@/@types/Order";
-import AddToOrderPanel from "../panel/AddToOrderPanel"
+import { ProductToOrder } from "@/@types/Order";
 import CreateProductPanel from "../panel/CreateProductPanel"
 import NewOrderPanel from "../panel/NewOrderPanel"
 import { X } from "lucide-react";
