@@ -1,9 +1,9 @@
 import Status from "../admin/Status"
 import { Button } from "../ui/button"
 import { BoxesIcon, X } from "lucide-react"
-import { newProductToOrder, CreateOrderBody, ProductToOrder } from "@/@types/Order"
+import { newProductToOrder, CreateOrderBody, ProductToOrder, Order, ProductOption, SelectedVariant } from "@/@types/Order"
 import { toast } from "sonner";
-import { createOrderByCompany, updateOrder, updateOrderStatus } from "@/api/order/getAllOrdersByCompany";
+import { createOrderByCompany, getOrderById, updateOrder, updateOrderStatus } from "@/api/order/getAllOrdersByCompany";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
@@ -15,6 +15,51 @@ interface Props {
     mode: "create" | "edit"
     orderId?: string
 }
+
+const mapOrderToProductsAdded = (order: Order): ProductToOrder[] => {
+    return order.products.map((op) => ({
+        id: op.id, // 👈 FUNDAMENTAL PARA UPDATE
+        product: {
+            id: op.product_snapshot.id,
+            name: op.product_snapshot.name,
+            price_selling: op.product_snapshot.price,
+            price: op.product_snapshot.price,
+            imgUrl: "",
+            description: "",
+            optionsSelected: op.product_snapshot.optionsSelected,
+        },
+        quantity: op.quantity, // 👈 viene de productOrder
+        notes: op.notes,
+        selectedOptions: mapOptionsToSelectedVariants(
+            op.product_snapshot.optionsSelected
+        ),
+    }))
+}
+
+const mapOptionsToSelectedVariants = (
+    options: ProductOption[]
+): SelectedVariant[] => {
+    const grouped = new Map<string, SelectedVariant>()
+
+    options.forEach((opt) => {
+        if (!grouped.has(opt.variantName)) {
+            grouped.set(opt.variantName, {
+                variantName: opt.variantName,
+                options: [],
+            })
+        }
+
+        grouped.get(opt.variantName)!.options.push({
+            name: opt.optionName,
+            optionId: opt.optionId,
+            extraPrice: opt.extraPrice,
+        })
+    })
+
+    return Array.from(grouped.values())
+}
+
+
 
 function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props) {
     const navigate = useNavigate()
@@ -88,20 +133,21 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
     }
 
 
-    const mapProductToBackend = (p: ProductToOrder): CreateOrderBody["products"][number] => {
-        if (!p.product.id) {
-            throw new Error("Producto sin ID válido")
-        }
-
+    const mapProductToBackend = (
+        p: ProductToOrder
+    ): CreateOrderBody["products"][number] & { id?: number } => {
         return {
-            productId: String(p.product.id), // ✅ siempre string
+            ...(p.id && { id: p.id }), // 👈 SOLO EN EDIT
+            productId: String(p.product.id),
             quantity: p.quantity,
             notes: p.notes,
-            selectedOptions: p.selectedOptions.flatMap(variant =>
-                variant.options.map(option => option.optionId)
+            selectedOptions: p.selectedOptions.flatMap(v =>
+                v.options.map(o => o.optionId)
             )
         }
     }
+
+
 
     const calculateExtras = (variants: ProductToOrder["selectedOptions"]) => {
         return variants.reduce((acc, v) => {
@@ -113,6 +159,25 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
         const basePrice = p.product.price_selling
         const extras = calculateExtras(p.selectedOptions)
         return (basePrice + extras) * p.quantity
+    }
+
+    useEffect(() => {
+        if (mode === "edit" && orderId) {
+            loadOrder()
+        }
+    }, [mode, orderId])
+
+    async function loadOrder() {
+        try {
+            const order = await getOrderById(orderId!) // API GET /orders/:id
+            console.log("Orden cargada:", order)
+            const mappedProducts = mapOrderToProductsAdded(order)
+            console.log("Productos mapeados antes de setear:", mappedProducts)
+            setProductsAdded(mappedProducts)
+        } catch (error) {
+            toast.error("No se pudo cargar la orden")
+            navigate("/admin/orders")
+        }
     }
 
 
@@ -131,7 +196,7 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
 
                     {productsAdded.map((p, index) => (
 
-                        <div className="relative rounded-xl border-gray-200 p-2 border-2 bg-gray-100 flex gap-2 pr-3">
+                        <div key={p.id ?? index} className="relative rounded-xl border-gray-200 p-2 border-2 bg-gray-100 flex gap-2 pr-3">
                             <X
                                 className="text-white bg-black hover:bg-red-500 m-auto p-1 cursor-pointer hover:opacity-80 absolute top-0 right-0 rounded-full"
                                 onClick={() => handleDeleteProduct(index)}
@@ -159,6 +224,10 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
                                         </div>
                                         <div className="flex gap-4">
                                             <p className="font-bold">x{p.quantity}</p>
+                                            <p className="font-bold">
+                                                ${calculateSubtotal(p).toFixed(2)}
+                                            </p>
+
                                             <p className="font-bold">${p.product.price_selling * p.quantity}</p>
                                         </div>
                                     </div>
@@ -168,14 +237,14 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
 
                                 {
                                     p.selectedOptions.length > 0 && (
-                                        <div>
+                                        <div >
                                             {
                                                 p.selectedOptions.map((v) => (
-                                                    <div className="flex gap-2 items-center">
+                                                    <div key={v.variantName} className="flex gap-2 items-center">
                                                         <div>{v.variantName}</div>
                                                         <div className="flex gap-1">
                                                             {v.options.map((opc) => (
-                                                                <div className="px-2 rounded-sm fontbol bg-green-500 text-white items-center">{opc.name}{opc.extraPrice != undefined && opc.extraPrice > 0 && (<span> +{opc.extraPrice}</span>)}</div>
+                                                                <div key={opc.optionId ?? index} className="px-2 rounded-sm fontbol bg-green-500 text-white items-center">{opc.name}{opc.extraPrice != undefined && opc.extraPrice > 0 && (<span> +{opc.extraPrice}</span>)}</div>
                                                             ))}
                                                         </div>
                                                     </div>
@@ -192,7 +261,19 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
 
                                 {/*Nota y total*/}
                                 <div className="flex justify-between items-center gap-2">
-                                    <input name="nota" id="" placeholder="Agregar una nota" className="bg-white rounded-sm ite items-center text-center justify-center flex-1 h-auto shadow p-1" />
+                                    <input
+                                        value={p.notes ?? ""}
+                                        onChange={(e) => {
+                                            const value = e.target.value
+                                            setProductsAdded(prev =>
+                                                prev.map((item, i) =>
+                                                    i === index ? { ...item, notes: value } : item
+                                                )
+                                            )
+                                        }}
+                                        placeholder="Agregar una nota"
+                                        className="bg-white rounded-sm flex-1 shadow p-1"
+                                    />
                                     <p className="font-bold text-green-700">
                                         ${calculateSubtotal(p).toFixed(2)}
                                     </p>
@@ -219,24 +300,17 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
                     </div>
                 </div>
                 <Button
-                    variant="default"
-                    className={`${productsAdded.length < 1 ? "bg-gray-400" : "bg-green-700 cursor-pointer"} w-full p-7 font-bold`}
-                    onClick={() => submitOrder}
+                    className="w-full p-7 font-bold bg-green-700"
+                    onClick={submitOrder}
                     disabled={productsAdded.length < 1 || isLoading}
                 >
-                    <Button
-                        className="w-full p-7 font-bold bg-green-700"
-                        onClick={submitOrder}
-                        disabled={productsAdded.length < 1 || isLoading}
-                    >
-                        {isLoading
-                            ? "Guardando..."
-                            : mode === "edit"
-                                ? "Actualizar orden"
-                                : "Crear nueva orden"}
-                    </Button>
-
+                    {isLoading
+                        ? "Guardando..."
+                        : mode === "edit"
+                            ? "Actualizar orden"
+                            : "Crear nueva orden"}
                 </Button>
+
             </div>
         </div>
     )

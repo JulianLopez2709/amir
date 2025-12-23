@@ -42,6 +42,11 @@ export interface OrderProduct {
   notes: string,
   product_snapshot: {
     id: string
+    price_selling: number
+    quantity?: number
+    img?: string
+    description?: string
+    imgUrl?: string
     name: string
     price: number
     timestamp: string
@@ -70,7 +75,8 @@ export interface OrdenRequesOld {
 }
 
 export interface ProductToOrder {
-  product: Product
+  id?: number;
+  product: ProductSnapshot
   quantity: number
   notes?: string
   selectedOptions: SelectedVariant[]
@@ -125,6 +131,19 @@ export interface CreateOrderBody {
 
 export interface newProductToOrder {
   product: Product,
+}
+
+
+export interface ProductSnapshot {
+  id: string
+  name: string
+  price_selling: number
+  quantity?: number
+  price: number
+  img?: string
+  description?: string
+  imgUrl?: string
+  optionsSelected: ProductOption[]
 }
 
 

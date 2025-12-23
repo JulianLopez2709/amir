@@ -124,58 +124,44 @@ function CreateProductPanel() {
             }))
     }
 
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        // 🔴 VALIDACIÓN DE VARIANTES
-        const hasInvalidVariants = variants.some(
-            v =>
-                v.options.some(o => o.name.trim() !== "") &&
-                v.name.trim() === ""
-        )
-
-        if (hasInvalidVariants) {
-            toast.error("El nombre de la opción es obligatorio.")
-            return
-        }
-
-        // otras validaciones
-        if (product.price_cost > product.price_selling) {
-            toast.error("El precio de costo no puede ser mayor al precio de venta.")
-            return
-        }
-
         setIsSubmitting(true)
-        try {
-            console.log("PRODUCTO A CREAR:", product)
-            const payload: CreateProductPayload = {
-                name: product.name,
-                description: product.description,
-                companyId: company?.id || 0,
-                type: "producto", // ✅ FIX CLAVE
-                unit: product.unit ?? "unidad",    // ✅ blindaje extra
-                barcode: product.barcode ? String(product.barcode) : undefined,
-                imgUrl: "", // imágenes después
-                price_cost: Number(product.price_cost),
-                price_selling: Number(product.price_selling),
-                stock: Number(product.stock_minimo),
-                available: true,
-                variants: buildVariantsPayload()
-            }
 
-            await createProduct(payload)
+        try {
+            const formData = new FormData()
+
+            // 📌 Campos normales
+            formData.append("name", product.name)
+            if (product.description) formData.append("description", product.description)
+            formData.append("companyId", String(company?.id || 0))
+            formData.append("type", "producto")
+            formData.append("unit", product.unit ?? "unidad")
+            if (product.barcode) formData.append("barcode", String(product.barcode))
+            formData.append("price_cost", String(product.price_cost))
+            formData.append("price_selling", String(product.price_selling))
+            formData.append("stock", String(product.stock_minimo))
+            formData.append("available", "true")
+
+            // 📌 Variantes
+            formData.append("variants", JSON.stringify(buildVariantsPayload()))
+
+            // 📌 IMAGEN (CLAVE)
+            if (imageFile) {
+                formData.append("image", imageFile) // 🔥 ESTE NOMBRE DEBE COINCIDIR
+            }
+            
+            console.log("formData entries:", formData.entries() )
+            await createProduct(formData)
 
             toast.success("Producto creado correctamente")
 
-            console.log("PAYLOAD A ENVIAR:", payload)
-
-            // RESET
+            // reset
             setProduct(initialProductState(company?.id || 0))
             setVariants([])
-            setPreviewUrl(null)
             setImageFile(null)
-            setAreStock(false)
+            setPreviewUrl(null)
 
         } catch (error) {
             toast.error("Error al crear el producto")
@@ -183,8 +169,6 @@ function CreateProductPanel() {
             setIsSubmitting(false)
         }
     }
-
-
 
     const handleSelectChange = (field: keyof Product, value: string) => {
         setProduct(prev => ({ ...prev, [field]: value }));

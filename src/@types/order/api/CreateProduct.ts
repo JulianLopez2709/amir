@@ -11,7 +11,7 @@ export type CreateProductPayload = {
   name: string
   barcode?: string
   description?: string
-  imgUrl?: string | null
+  imgUrl?: File | string |null
   price_cost: number
   price_selling: number
   stock?: number

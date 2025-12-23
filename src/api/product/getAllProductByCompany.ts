@@ -12,10 +12,11 @@ export const getAllProductByCompany = async (companyId: number) => {
     return response
 }
 
-export const createProduct = async ( product: CreateProductPayload) => {
+export const createProduct = async ( formData: FormData) => {
+    console.log("formData", formData)
     const response = await apiFetch<any>(`product/`, {
         method: 'POST',
-        body: JSON.stringify(product),
+        body: formData,
     })
     if (!response) {
         throw new Error('No response from server')

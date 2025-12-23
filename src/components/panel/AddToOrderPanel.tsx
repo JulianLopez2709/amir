@@ -1,4 +1,4 @@
-import { newProductToOrder, ProductToOrder } from '@/@types/Order';
+/*import { newProductToOrder, ProductToOrder } from '@/@types/Order';
 import { getOrderById } from '@/api/order/getAllOrdersByCompany';
 import React, { useEffect } from 'react'
 
@@ -38,4 +38,4 @@ function AddToOrderPanel({ productsAdded }: Props) {
   )
 }
 
-export default AddToOrderPanel
+export default AddToOrderPanel*/
