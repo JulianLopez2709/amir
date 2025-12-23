@@ -1,19 +1,23 @@
-export default async function apiFetch<T> (endpoint: string, options?: RequestInit): Promise<T> {
-    const baseUrl = 'http://localhost:3000/'; // Replace with your actual base URL
-    const res = await fetch(`${baseUrl}${endpoint}`, {
-        credentials : 'include',
-        ...options, 
-        headers: {
-            'Content-Type': 'application/json',
-            ...(options?.headers || {})
-        }
-    }
-    )
+export default async function apiFetch<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
 
-    if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`)
-    }
-    const data = await res.json()
+  const baseUrl = 'http://localhost:3000/'
+  const isFormData = options.body instanceof FormData
 
-    return data
+  const res = await fetch(`${baseUrl}${endpoint}`, {
+    credentials: 'include',
+    ...options,
+    headers: {
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(options.headers || {})
+    }
+  })
+
+  if (!res.ok) {
+    throw new Error(`HTTP error! status: ${res.status}`)
+  }
+
+  return res.json()
 }

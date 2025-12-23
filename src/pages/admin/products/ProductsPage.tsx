@@ -7,26 +7,27 @@ import { useEffect, useState } from "react";
 import Product from "@/@types/Product";
 import { getAllProductByCompany } from "@/api/product/getAllProductByCompany";
 import RightPanel from "@/components/admin/RightPanel";
-import { newProductToOrder } from "@/@types/Order";
+import { newProductToOrder, Order, OrderProduct, ProductToOrder, SelectedVariant } from "@/@types/Order";
 import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext"
+import { getOrderById } from "@/api/order/getAllOrdersByCompany";
 
-type PanelMode = 'new-order' | 'create-product' | 'add-to-order'
+type PanelMode = 'order' | 'create-product';
 
 function ProductsPage() {
     const [searchParams] = useSearchParams();
     const ordenId = searchParams.get("orden");
     const isEditingOrder = Boolean(ordenId);
 
-    const [modePanelRight, setModePanelRight] = useState<PanelMode>('new-order')
+    const [modePanelRight, setModePanelRight] = useState<PanelMode>('order')
     const [shoppingCart, setShoppingCart] = useState(false)
-    const [listProductsAdded, setListProductsAdded] = useState<newProductToOrder[]>([])
+    const [listProductsAdded, setListProductsAdded] = useState<ProductToOrder[]>([])
     const [searchTerm, setSearchTerm] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [listProduct, setListProduct] = useState<Product[]>([])
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
     const { company } = useAuth();
-    const {socket} = useSocket()
+    const { socket } = useSocket()
 
     const handle = async () => {
         setIsLoading(true)
@@ -50,9 +51,88 @@ function ProductsPage() {
         }
     }
 
+
+    /*const mappedProducts: ProductToOrder[] = order.products.map((p: OrderProduct) => {
+        const variantsMap: Record<string, SelectedVariant> = {}
+
+        p.product_snapshot.optionsSelected.forEach(opt => {
+            if (!variantsMap[opt.variantName]) {
+                variantsMap[opt.variantName] = {
+                    variantName: opt.variantName,
+                    options: []
+                }
+            }
+
+            variantsMap[opt.variantName].options.push({
+                optionId: opt.optionId,
+                name: opt.optionName,
+                extraPrice: opt.extraPrice
+            })
+        })
+
+        return {
+            product: {
+                id: p.product_snapshot.id,
+                name: p.product_snapshot.name,
+                price_cost: p.product_snapshot.price,
+                description: "",
+            },
+            quantity: p.quantity,
+            notes: p.notes,
+            selectedOptions: Object.values(variantsMap),
+        }
+    })*/
+
+
+    useEffect(() => {
+        if (!ordenId) return;
+
+        const loadOrder = async () => {
+            const order = await getOrderById(ordenId);
+
+            const mappedProducts: ProductToOrder[] = order.products.map(p => {
+                const variantsMap: Record<string, SelectedVariant> = {};
+
+                p.product_snapshot.optionsSelected.forEach(opt => {
+                    if (!variantsMap[opt.variantName]) {
+                        variantsMap[opt.variantName] = {
+                            variantName: opt.variantName,
+                            options: []
+                        };
+                    }
+
+                    variantsMap[opt.variantName].options.push({
+                        optionId: opt.optionId,
+                        name: opt.optionName,
+                        extraPrice: opt.extraPrice
+                    });
+                });
+
+                return {
+                    product: {
+                        id: p.product_snapshot.id,
+                        name: p.product_snapshot.name,
+                        price_cost: p.product_snapshot.price,
+                        description: "",
+                    } as any, // 👈 snapshot
+                    quantity: p.quantity,
+                    notes: p.notes,
+                    selectedOptions: Object.values(variantsMap),
+                };
+            });
+
+            setListProductsAdded(mappedProducts);
+        };
+
+        loadOrder();
+    }, [ordenId]);
+
+
+
+
     useEffect(() => {
         if (isEditingOrder) {
-            setModePanelRight("add-to-order");
+            setModePanelRight("order");
             setShoppingCart(true);
         }
     }, [ordenId]);
@@ -73,7 +153,7 @@ function ProductsPage() {
 
         // Suscribimos el componente al evento 'newProduct'
         socket.on('newProduct', handleNewProduct);
-        
+
 
         // Función de limpieza: Es CRUCIAL desuscribirse del evento
         // cuando el componente se desmonte para evitar memory leaks.
@@ -98,16 +178,50 @@ function ProductsPage() {
         setFilteredProducts(filtered);
     }, [searchTerm, listProduct]);
 
-    const addNewProduct = (product: Product, acount: number) => {
-        const orden: newProductToOrder = {
-            product: product,
-            acount: acount
-        }
+    const areVariantsEqual = (
+        a: SelectedVariant[],
+        b: SelectedVariant[]
+    ): boolean => {
+        if (a.length !== b.length) return false
 
-        setListProductsAdded(prevList => [...prevList, orden])
+        return a.every(variantA => {
+            const variantB = b.find(v => v.variantName === variantA.variantName)
+            if (!variantB) return false
 
-        setModePanelRight(isEditingOrder ? "add-to-order" : "new-order");
+            if (variantA.options.length !== variantB.options.length) return false
+
+            const optionIdsA = variantA.options.map(o => o.optionId).sort()
+            const optionIdsB = variantB.options.map(o => o.optionId).sort()
+
+            return optionIdsA.every((id, index) => id === optionIdsB[index])
+        })
     }
+
+    const addNewProduct = (productToOrder: ProductToOrder) => {
+        setListProductsAdded(prev => {
+            const index = prev.findIndex(p =>
+                p.product.id === productToOrder.product.id &&
+                areVariantsEqual(p.selectedOptions, productToOrder.selectedOptions)
+            )
+
+            // 🟢 MISMO producto + MISMAS variantes → sumar cantidad
+            if (index !== -1) {
+                const updated = [...prev]
+                updated[index] = {
+                    ...updated[index],
+                    quantity: updated[index].quantity + productToOrder.quantity
+                }
+                return updated
+            }
+
+            // 🟢 Producto igual pero variantes distintas → nuevo item
+            return [...prev, productToOrder]
+        })
+
+        setModePanelRight("order")
+    }
+
+
 
 
     const newProductClick = () => {
@@ -181,10 +295,19 @@ function ProductsPage() {
                             )}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] object-cover">
+                        <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] ">
                             {filteredProducts.map((product, index) => (
-                                <li key={index} className="flex justify-center items-center">
-                                    <CardProduct product={product} addClick={(count) => addNewProduct(product, count)} index={index} editClick={()=>{}}/>
+                                <li key={index} className="flex justify-center ">
+                                    <CardProduct
+                                        product={product}
+                                        index={index}
+                                        editClick={() => console.log(product)}
+                                        addClick={(productToOrder) => {
+                                            addNewProduct(productToOrder)
+                                            setShoppingCart(true)
+                                        }}
+                                    />
+
                                 </li>
                             ))}
                         </div>
@@ -193,7 +316,7 @@ function ProductsPage() {
             </div>
 
             <div className={`
-                    fixed z-50 
+                    fixed z-10 
                     ${shoppingCart ? "flex" : "hidden"} 
                     right-0
                     h-[95vh] w-full 
@@ -206,6 +329,8 @@ function ProductsPage() {
                     productsAdded={listProductsAdded}
                     setProductsAdded={setListProductsAdded}
                     onClose={() => setShoppingCart(false)}
+                    orderMode={isEditingOrder ? "edit" : "create"}
+                    orderId={ordenId ?? undefined}
                 />
             </div>
         </div>

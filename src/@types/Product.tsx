@@ -1,20 +1,22 @@
 type TypeProduct = "combo" | "producto" | "servicio"
 
 interface Product {
-    id?: number,
+    id?: string,
     type?: TypeProduct,
     name: string,
     description?: string,
     price_selling: number,
     price_cost: number,
     stock_records?: Stock,
+    manage_stock: boolean,
     imgUrl?: string,
     barcode ?: number,
     stock_minimo ?: number,
     avaliable ?: boolean,
     is_favorite ?: boolean,
     categoryId ?: number,
-    companyId: number
+    companyId: number,
+    unit ?: string
     detail ?: {},
     variants ?: Variant[]
     //"createAt": "2025-04-19T01:43:38.083Z",
@@ -44,6 +46,13 @@ interface VariantOption {
     name: string,
     extraPrice: number,
     variantId: number,
+}
+
+
+
+export interface SelectedVariant {
+  variantId: number
+  optionIds: number[]
 }
 
 export default Product

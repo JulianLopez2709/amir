@@ -1,20 +1,67 @@
 import Status from "../admin/Status"
 import { Button } from "../ui/button"
-import { BoxesIcon, Trash } from "lucide-react"
-import { createOrderBody, newProductToOrder } from "@/@types/Order"
+import { BoxesIcon, X } from "lucide-react"
+import { newProductToOrder, CreateOrderBody, ProductToOrder, Order, ProductOption, SelectedVariant } from "@/@types/Order"
 import { toast } from "sonner";
-import { createOrderByCompany } from "@/api/order/getAllOrdersByCompany";
+import { createOrderByCompany, getOrderById, updateOrder, updateOrderStatus } from "@/api/order/getAllOrdersByCompany";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface Props {
-    productsAdded: newProductToOrder[];
-    setProductsAdded: React.Dispatch<React.SetStateAction<newProductToOrder[]>>;
-
+    productsAdded: ProductToOrder[];
+    setProductsAdded: React.Dispatch<React.SetStateAction<ProductToOrder[]>>;
+    mode: "create" | "edit"
+    orderId?: string
 }
 
-function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
+const mapOrderToProductsAdded = (order: Order): ProductToOrder[] => {
+    return order.products.map((op) => ({
+        id: op.id, // 👈 FUNDAMENTAL PARA UPDATE
+        product: {
+            id: op.product_snapshot.id,
+            name: op.product_snapshot.name,
+            price_selling: op.product_snapshot.price,
+            price: op.product_snapshot.price,
+            imgUrl: "",
+            description: "",
+            optionsSelected: op.product_snapshot.optionsSelected,
+        },
+        quantity: op.quantity, // 👈 viene de productOrder
+        notes: op.notes,
+        selectedOptions: mapOptionsToSelectedVariants(
+            op.product_snapshot.optionsSelected
+        ),
+    }))
+}
+
+const mapOptionsToSelectedVariants = (
+    options: ProductOption[]
+): SelectedVariant[] => {
+    const grouped = new Map<string, SelectedVariant>()
+
+    options.forEach((opt) => {
+        if (!grouped.has(opt.variantName)) {
+            grouped.set(opt.variantName, {
+                variantName: opt.variantName,
+                options: [],
+            })
+        }
+
+        grouped.get(opt.variantName)!.options.push({
+            name: opt.optionName,
+            optionId: opt.optionId,
+            extraPrice: opt.extraPrice,
+        })
+    })
+
+    return Array.from(grouped.values())
+}
+
+
+
+function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props) {
     const navigate = useNavigate()
     const { company } = useAuth();
     const [totalPrice, setTotalPrice] = useState(0);
@@ -23,9 +70,13 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
 
     // Calcular el total cada vez que cambian los productos
     useEffect(() => {
-        const newTotal = productsAdded.reduce((acc, p) => acc + (p.product.price_selling * p.acount), 0);
-        setTotalPrice(newTotal);
-    }, [productsAdded]);
+        const total = productsAdded.reduce(
+            (acc, p) => acc + calculateSubtotal(p),
+            0
+        )
+        setTotalPrice(total)
+    }, [productsAdded])
+
 
     const handleDeleteProduct = (indexToDelete: number) => {
         setProductsAdded((prev) => prev.filter((_, index) => index !== indexToDelete));
@@ -35,77 +86,213 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
         setProductsAdded([]);
     };
 
-    async function createOrder(listaProducts: newProductToOrder[]) {
-        setIsLoading(true)
-        if (listaProducts.length === 0) {
-            toast.error("La orden no puede estar vacía");
-            return;
+
+
+    async function submitOrder() {
+        if (productsAdded.length === 0) {
+            toast.error("La orden no puede estar vacía")
+            return
         }
 
-        const ordenBody: createOrderBody = {
-            total_price: totalPrice,
-            companyId: company?.id || 0,
-            products: listaProducts.map((p) => ({
-                productId: p.product.id,
-                status: "new",
-                notes: "",
-                quantity: p.acount
-            }))
-        };
+        if (!company?.id) {
+            toast.error("Compañía no válida")
+            return
+        }
+
+        setIsLoading(true)
+
+        const orderBody: CreateOrderBody = {
+            companyId: company.id,
+            detail: {
+                metodo_pago: "Efectivo",
+                notas: mode === "edit"
+                    ? "Orden actualizada desde el panel"
+                    : "Orden creada desde el panel",
+            },
+            products: productsAdded.map(mapProductToBackend)
+        }
 
         try {
-            const res = await createOrderByCompany(ordenBody);
-            if (!res) {
-                throw new Error("Error al crear la orden");
+            if (mode === "create") {
+                await createOrderByCompany(orderBody)
+                toast.success("Orden creada con éxito")
+            } else {
+                if (!orderId) throw new Error("Order ID requerido")
+                await updateOrder(orderId, orderBody) // 👈 TU API PUT/PATCH
+                toast.success("Orden actualizada con éxito")
             }
-            toast.success("Orden creada con éxito");
-            setProductsAdded([]);
-            navigate("/admin/orders");
-        } catch (error) {
-            toast.error("Error al crear la orden");
-            console.error("Error creating order:", error);
-        }
 
-        setIsLoading(false)
+            setProductsAdded([])
+            navigate("/admin/orders")
+        } catch (error) {
+            toast.error("Error al guardar la orden")
+            console.error(error)
+        } finally {
+            setIsLoading(false)
+        }
     }
+
+
+    const mapProductToBackend = (
+        p: ProductToOrder
+    ): CreateOrderBody["products"][number] & { id?: number } => {
+        return {
+            ...(p.id && { id: p.id }), // 👈 SOLO EN EDIT
+            productId: String(p.product.id),
+            quantity: p.quantity,
+            notes: p.notes,
+            selectedOptions: p.selectedOptions.flatMap(v =>
+                v.options.map(o => o.optionId)
+            )
+        }
+    }
+
+
+
+    const calculateExtras = (variants: ProductToOrder["selectedOptions"]) => {
+        return variants.reduce((acc, v) => {
+            return acc + v.options.reduce((sum, o) => sum + (o.extraPrice || 0), 0)
+        }, 0)
+    }
+
+    const calculateSubtotal = (p: ProductToOrder) => {
+        const basePrice = p.product.price_selling
+        const extras = calculateExtras(p.selectedOptions)
+        return (basePrice + extras) * p.quantity
+    }
+
+    useEffect(() => {
+        if (mode === "edit" && orderId) {
+            loadOrder()
+        }
+    }, [mode, orderId])
+
+    async function loadOrder() {
+        try {
+            const order = await getOrderById(orderId!) // API GET /orders/:id
+            console.log("Orden cargada:", order)
+            const mappedProducts = mapOrderToProductsAdded(order)
+            console.log("Productos mapeados antes de setear:", mappedProducts)
+            setProductsAdded(mappedProducts)
+        } catch (error) {
+            toast.error("No se pudo cargar la orden")
+            navigate("/admin/orders")
+        }
+    }
+
 
     return (
         <div className="flex flex-col h-full">
             <div className="flex justify-between w-full">
-                <h2 className="font-bold text-xl">Nueva Orden</h2>
+                <h2 className="font-bold text-xl">{mode === "edit" ? "Editar Orden" : "Nueva Orden"}</h2>
                 <Status name="new" color="purple" />
             </div>
             <h3 className="font-bold text-lg">Orden Items {productsAdded.length}</h3>
             <p className={`text-sm text-end ${productsAdded.length < 1 ? "text-gray-200" : "text-red-500 cursor-pointer"}`} onClick={handleDeleteAllProducts}>Eliminar todos los productos</p>
 
             {/* Lista de productos - Scrolleable */}
-            <div className="flex-1 overflow-y-auto my-2 max-h-[400px]">
-                {productsAdded.map((p, index) => (
-                    <div className="flex justify-between items-center gap-4 mb-3" key={index}>
-                        <div className="size-10 bg-gray-100 rounded-md flex items-center justify-center">
-                            <BoxesIcon className="size-7 text-gray-500" />
+            <ScrollArea className=" flex-1 my-2 max-h-[600px]">
+                <div className="flex flex-col gap-2">
+
+                    {productsAdded.map((p, index) => (
+
+                        <div key={p.id ?? index} className="relative rounded-xl border-gray-200 p-2 border-2 bg-gray-100 flex gap-2 pr-3">
+                            <X
+                                className="text-white bg-black hover:bg-red-500 m-auto p-1 cursor-pointer hover:opacity-80 absolute top-0 right-0 rounded-full"
+                                onClick={() => handleDeleteProduct(index)}
+                            />
+
+                            <div className="hidden sm:flex size-20 rounded-md overflow-hidden border-4 border-gray-400 bg-gray-100">
+                                {p.product.imgUrl ? (
+                                    <img
+                                        src={p.product.imgUrl}
+                                        alt={p.product.name}
+                                        className="w-full h-full object-cover block"
+                                    />
+                                ) : (
+                                    <BoxesIcon className="text-gray-400 size-10" />
+                                )}
+                            </div>
+
+                            <div className="flex flex-col flex-1 gap-2">
+                                <div className=" flex items-center gap-4 w-full " key={index}>
+
+                                    <div className="flex justify-between items-center w-full">
+                                        <div className="flex flex-col flex-1">
+                                            <p className="font-bold">{p.product.name}</p>
+                                            <p className="text-sm">{p.product.description}</p>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <p className="font-bold">x{p.quantity}</p>
+                                            <p className="font-bold">
+                                                ${calculateSubtotal(p).toFixed(2)}
+                                            </p>
+
+                                            <p className="font-bold">${p.product.price_selling * p.quantity}</p>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                {/*Seccion variables, opciones y nota*/}
+
+                                {
+                                    p.selectedOptions.length > 0 && (
+                                        <div >
+                                            {
+                                                p.selectedOptions.map((v) => (
+                                                    <div key={v.variantName} className="flex gap-2 items-center">
+                                                        <div>{v.variantName}</div>
+                                                        <div className="flex gap-1">
+                                                            {v.options.map((opc) => (
+                                                                <div key={opc.optionId ?? index} className="px-2 rounded-sm fontbol bg-green-500 text-white items-center">{opc.name}{opc.extraPrice != undefined && opc.extraPrice > 0 && (<span> +{opc.extraPrice}</span>)}</div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            }
+                                            {
+                                                p.notes != null && (
+                                                    <div>Notas {p.notes}</div>
+                                                )
+                                            }
+                                        </div>
+                                    )
+                                }
+
+                                {/*Nota y total*/}
+                                <div className="flex justify-between items-center gap-2">
+                                    <input
+                                        value={p.notes ?? ""}
+                                        onChange={(e) => {
+                                            const value = e.target.value
+                                            setProductsAdded(prev =>
+                                                prev.map((item, i) =>
+                                                    i === index ? { ...item, notes: value } : item
+                                                )
+                                            )
+                                        }}
+                                        placeholder="Agregar una nota"
+                                        className="bg-white rounded-sm flex-1 shadow p-1"
+                                    />
+                                    <p className="font-bold text-green-700">
+                                        ${calculateSubtotal(p).toFixed(2)}
+                                    </p>
+
+                                </div>
+                            </div>
+
                         </div>
-                        <div className="flex flex-col flex-1">
-                            <p className="font-bold">{p.product.name}</p>
-                            <p className="text-sm">{p.product.description}</p>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <p className="font-bold">x{p.acount}</p>
-                            <p className="text-sm text-gray-500">${p.product.price_selling * p.acount}</p>
-                        </div>
-                        <Trash
-                            className="text-white bg-red-500 m-auto p-1 cursor-pointer hover:opacity-50"
-                            onClick={() => handleDeleteProduct(index)}
-                        />
-                    </div>
-                ))}
-            </div>
+
+                    ))}
+                </div>
+
+            </ScrollArea>
 
             {/* Footer con total y botón - Fijo en la parte inferior */}
             <div className="pt-4 border-t">
                 <div className="flex w-full justify-between items-center font-bold mb-3">
                     <div>
-                        <p className="text-gray-500">Total productos: {productsAdded.reduce((acc, p) => acc + p.acount, 0)}</p>
+                        <p className="text-gray-500">Total productos: {/*productsAdded.reduce((acc, p) => acc + p.acount, 0)*/}</p>
                         <p className="text-gray-500">Items únicos: {productsAdded.length}</p>
                     </div>
                     <div className="text-right">
@@ -113,14 +300,17 @@ function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
                     </div>
                 </div>
                 <Button
-                    variant="default"
-                    className={`${productsAdded.length < 1 ? "bg-gray-400" : "bg-green-700 cursor-pointer"} w-full p-7 font-bold`}
-                    onClick={() => createOrder(productsAdded)}
+                    className="w-full p-7 font-bold bg-green-700"
+                    onClick={submitOrder}
                     disabled={productsAdded.length < 1 || isLoading}
                 >
-                    {isLoading ? 'Creando orden...':'Crear nueva orden'}
-                    
+                    {isLoading
+                        ? "Guardando..."
+                        : mode === "edit"
+                            ? "Actualizar orden"
+                            : "Crear nueva orden"}
                 </Button>
+
             </div>
         </div>
     )
