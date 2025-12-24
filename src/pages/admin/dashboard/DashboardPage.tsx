@@ -1,20 +1,54 @@
 import { BarChart3, ScanBarcode, MessagesSquare, ArrowUpRight, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useEffect, useState } from "react"
+import { useAuth } from '@/context/AuthContext';
+import { DashboardSummary, getDashboardSummary } from '@/api/dashboard/summary';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 function DashboardPage() {
+  const { company } = useAuth();
+
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const data = await getDashboardSummary(company!.id)
+        setSummary(data)
+      } catch (error) {
+        console.error("Error cargando dashboard", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboard()
+  }, [company])
+
+
   const openWhatsApp = () => {
     window.open('https://wa.me/+573117894828', '_blank');
   };
+
+  const crecimiento =
+    summary && summary.gananciasMesPasado.total > 0
+      ? ((summary.gananciasMesActual.total - summary.gananciasMesPasado.total) / summary.gananciasMesPasado.total) * 100
+      : 0
+
+  if (loading) {
+    return <div className="p-6">Cargando dashboard...</div>
+  }
 
   return (
     <div className="p-3 md:p-6 h-full">
       <h2 className='text-xl mb-2'>Excelente, estas teniendo buenas ordenes</h2>
       {/* Grid Container */}
-      <div className="flex flex-col md:flex-row gap-2 h-full w-full pb-2">
+      <div className="flex flex-col md:flex-row gap-2 h-full w-full pb-4">
         {/*Cantidad de ordenes*/}
         <div className='flex flex-col gap-2 flex-1 w-full '>
           <div className='flex gap-2 w-full justify-between items-center text-white'>
-            <div className='flex-col items-center justify-center p-4 rounded-xl bg-green-800 text-center font-bold flex-1'><p>Nuevas Ordenes</p> <span>2</span></div>
+            <div className='flex-col items-center justify-center p-4 rounded-xl bg-green-800 text-center font-bold flex-1'><p>Nuevas Ordenes</p>  <span>{summary?.totalOrdenesHoy ?? 0}</span></div>
             <div className='flex-col items-center justify-center p-4 rounded-xl bg-green-800 text-center font-bold flex-1'><p>Total de Ordenes</p> <span>2</span></div>
             <div className='flex-col items-center justify-center p-4 rounded-xl bg-green-800 text-center font-bold flex-1'><p>Ordenes en Progreso</p> <span>2</span></div>
             <div className='flex-col items-center justify-center p-4 rounded-xl bg-green-800 text-center font-bold flex-1'><p>Ordenes en Progreso </p><span>2</span></div>
@@ -35,10 +69,14 @@ function DashboardPage() {
                   <DollarSign className="text-green-600" />
                   <span className="text-green-600 font-medium">Este Mes</span>
                 </div>
-                <p className="text-2xl font-bold">$12,350</p>
+                <p className="text-2xl font-bold">
+                  ${summary?.gananciasMesActual.total?.toLocaleString() ?? "0"}
+                </p>
                 <div className="flex items-center gap-1 text-green-600">
                   <ArrowUpRight className="size-4" />
-                  <span className="text-sm">12% más que el mes pasado</span>
+                  <span className="text-sm">
+                    {crecimiento.toFixed(1)}% más que el mes pasado
+                  </span>
                 </div>
               </div>
 
@@ -47,7 +85,9 @@ function DashboardPage() {
                   <DollarSign className="text-gray-600" />
                   <span className="text-gray-600 font-medium">Mes Pasado</span>
                 </div>
-                <p className="text-2xl font-bold">$11,023</p>
+                <p className="text-2xl font-bold">
+                  ${summary?.gananciasMesPasado.total?.toLocaleString() ?? "0"}
+                </p>
               </div>
             </div>
           </div>
@@ -55,20 +95,35 @@ function DashboardPage() {
           {/*Lista de ordenes*/}
           <div className='flex flex-col gap-2 md:flex-row w-full h-full'>
 
-              <div className='bg-white p-2 rounded-xl flex flex-col flex-1 min-h-72 shadow'>
+            <div className='bg-white p-2 rounded-xl flex flex-col flex-1 min-h-72 shadow'>
+              <div className='flex gap-2'>
                 <h3>Lista de Ordenes</h3>
+                <p>{summary?.ordenesEnProceso.cantidad}</p>
               </div>
-              <div className='bg-white p-2 rounded-xl flex-1 h-full min-h-72 shadow'>
-                <h3>Otras Lista</h3>
-                <div className='flex justify-between items-center gap-2 w-full h-auto'>
+              <ScrollArea className=' flex flex-col gap-2 max-h-96 mb-1'>
+                <div className='flex flex-col gap-1'>
 
-                  {/*Componente ejemplo*/}
-                  <div className='p-2 min-h-8 min-w-10 md:w-20 md:h-20 rounded-xl text-center bg-green-500  justify-center items-center flex font-bold text-white'>CJ</div>
-                  <p className='font-bold'>#id</p>
-                  <div className='p-1 rounded-sm'>En Proceso</div>
-
+                  {
+                    summary?.ordenesEnProceso.ordenes.map((orden) => (
+                      <div>
+                        ID: {orden.id}
+                      </div>
+                    ))
+                  }
                 </div>
+              </ScrollArea>
+            </div>
+
+            <div className='bg-white p-2 rounded-xl flex-1 h-full min-h-72 shadow'>
+              <h3>Otras Lista</h3>
+              <div className='flex justify-between items-center gap-2 w-full h-auto'>
+                {/*Componente ejemplo*/}
+                <div className='p-2 min-h-8 min-w-10 md:w-20 md:h-20 rounded-xl text-center bg-green-500  justify-center items-center flex font-bold text-white'>CJ</div>
+                <p className='font-bold'>#id</p>
+                <div className='p-1 rounded-sm'>En Proceso</div>
+
               </div>
+            </div>
           </div>
         </div>
 
