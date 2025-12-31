@@ -127,6 +127,26 @@ export interface CreateOrderBody {
   }[]
 }
 
+export interface UpdateBody {
+  companyId: number,
+  detail: {
+    cliente?: {
+      nombre: string
+      telefono: string
+    },
+    metodo_pago: string
+    notas?: string
+  },
+  products: {
+    imgUrl?: string
+    productId: string
+    quantity: number
+    notes?: string
+    selectedOptions: number[]
+  }[]
+}
+
+
 
 
 export interface newProductToOrder {

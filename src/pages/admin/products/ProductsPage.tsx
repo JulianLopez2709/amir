@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext"
 import { getOrderById } from "@/api/order/getAllOrdersByCompany";
 
-type PanelMode = 'order' | 'create-product';
+type PanelMode = 'order' | 'create-product' | 'edit-order';
 
 function ProductsPage() {
     const [searchParams] = useSearchParams();
@@ -132,7 +132,7 @@ function ProductsPage() {
 
     useEffect(() => {
         if (isEditingOrder) {
-            setModePanelRight("order");
+            setModePanelRight("edit-order");
             setShoppingCart(true);
         }
     }, [ordenId]);
@@ -218,7 +218,6 @@ function ProductsPage() {
             return [...prev, productToOrder]
         })
 
-        setModePanelRight("order")
     }
 
 
@@ -329,7 +328,6 @@ function ProductsPage() {
                     productsAdded={listProductsAdded}
                     setProductsAdded={setListProductsAdded}
                     onClose={() => setShoppingCart(false)}
-                    orderMode={isEditingOrder ? "edit" : "create"}
                     orderId={ordenId ?? undefined}
                 />
             </div>

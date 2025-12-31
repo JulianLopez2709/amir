@@ -32,6 +32,7 @@ import { STATUS_CONFIG } from '@/config/statusConfig'
 function OrderPage() {
   type OrderAction = 'confirm' | 'complete' | null;
   type PaymentMethod = 'cash' | 'card' | null;
+  type OrderFilter = 'ALL' | 'pending' | 'in_progress' | 'completed';
 
 
   const { company } = useAuth();
@@ -42,6 +43,7 @@ function OrderPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [listOrder, setListOrder] = useState<Order[]>([]);
   const [selectOrden, setSelectOrden] = useState<Order | null>(null);
+  const [orderFilter, setOrderFilter] = useState<OrderFilter>('ALL');
 
   const { socket } = useSocket()
 
@@ -56,6 +58,11 @@ function OrderPage() {
     selectOrden?.data[0].status !== 'completed' &&
     selectOrden?.status !== 'canceled' &&
     selectOrden?.status !== 'expense';*/
+  const filteredOrders = listOrder.filter(order => {
+    if (orderFilter === 'ALL') return true;
+    return order.status === orderFilter;
+  });
+
 
   const handleExpenseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -118,6 +125,14 @@ function OrderPage() {
       toast.error("Error al actualizar el estado")
     }
   }
+
+  const today = new Date().toLocaleDateString('es-CO', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
 
   useEffect(() => {
     if (!socket) return;
@@ -334,7 +349,7 @@ function OrderPage() {
 
         <div className=' flex w-full justify-between items-center'>
           <h2 className='font-bold md:text-2xl'>Lista de Pedidos</h2>
-          <p>Miercoles, 18 Agosto 2025</p>
+          <p className="capitalize">{today}</p>
         </div>
         <div className='md:flex justify-between gap-1'>
 
@@ -399,26 +414,43 @@ function OrderPage() {
             </Link>
           </div>
           <div className='flex gap-2'>
-            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-green-800 text-white'>
-              <p className='cursor-pointer'>Todos</p>
+            <div
+              onClick={() => setOrderFilter('ALL')}
+              className={`p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center cursor-pointer
+              ${orderFilter === 'ALL' ? 'bg-green-800 text-white' : 'bg-white'}`}>
+              <p>Todos</p>
             </div>
-            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-white '>
-              <p className='cursor-pointer '>Por confirmar</p>
+
+            <div
+              onClick={() => setOrderFilter('pending')}
+              className={`p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center cursor-pointer *
+                ${orderFilter === 'pending' ? 'bg-green-800 text-white' : 'bg-white'}`}>
+              <p>Por confirmar</p>
             </div>
-            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-white'>
-              <p className='cursor-pointer '>En proceso</p>
+
+            <div
+              onClick={() => setOrderFilter('in_progress')}
+              className={`p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center cursor-pointer
+              ${orderFilter === 'in_progress' ? 'bg-green-800 text-white' : 'bg-white'} `} >
+              <p>En proceso</p>
             </div>
-            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-white'>
-              <p className='cursor-pointer '>Finalizada</p>
+
+            <div
+              onClick={() => setOrderFilter('completed')}
+              className={`p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center cursor-pointer
+              ${orderFilter === 'completed' ? 'bg-green-800 text-white' : 'bg-white'}
+            `}>
+              <p>Finalizada</p>
             </div>
           </div>
+
         </div>
       </div>
       {/*NOTA: ARREGLAR EL BACKEND PARA QUE ME DEVUELVA UN ORDEN ESPECIFICO SOLO HAY UNA VARIANTE 
       Y ESTA TIENE MUCHAS OPCIONES. */ }
       {/* lista de ordenes  */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-4 overflow-y-auto h-[80vh]">
-        {listOrder.map((orden, index) => (
+        {filteredOrders.map((orden, index) => (
           <li key={index} className='list-none'>
             <CardOrder
               item={orden}
