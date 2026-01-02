@@ -64,6 +64,7 @@ function AddToOrderPanel({ productsAdded, setProductsAdded, orderId }: Props) {
   const navigate = useNavigate()
   const [totalPrice, setTotalPrice] = useState(0);
   const [isLoading, setIsLoading] = useState(false)
+  const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     loadOrder();
@@ -72,6 +73,7 @@ function AddToOrderPanel({ productsAdded, setProductsAdded, orderId }: Props) {
   async function loadOrder() {
     try {
       const order = await getOrderById(orderId);
+      setOrder(order);
       const mapped = mapOrderToProductsAdded(order);
       console.log("mapped order to productsAdded", mapped);
       setProductsAdded(mapped);
@@ -134,11 +136,14 @@ function AddToOrderPanel({ productsAdded, setProductsAdded, orderId }: Props) {
 
   return (
     <div>
-      AddToOrderPanel
+      <div>
+        <h2 className="font-bold text-2xl mb-4">Editar Orden</h2>
+        <p>{order?.status}</p>
+      </div>
       <div className="flex flex-col h-full justify-between items-center">
         <div className="flex flex-col w-full mb-3">
           {/* Lista de productos - Scrolleable */}
-          <ScrollArea className=" flex-1 my-2 max-h-[600px]">
+          <ScrollArea className="flex flex-col gap-2 max-h-96 mb-1">
             <div className="flex flex-col gap-2">
 
               {productsAdded.map((p, index) => (

@@ -15,37 +15,40 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const [socket, setSocket] = useState<Socket | null>(null);
     // Usamos 'user' como señal de que el usuario está autenticado
-    const { user } = useAuth();
+    const { user, activeCompanyId } = useAuth();
 
     useEffect(() => {
-        // Solo intentaremos conectar si hay un usuario logueado.
-        if (user) {
-            // 2. Leemos el token directamente desde las cookies.
-            // Asegúrate de que el nombre de la cookie sea 'token'.
-            const newSocket = io("http://localhost:3000/", {
-                withCredentials: true
-            });
-
-            setSocket(newSocket);
-
-            newSocket.on('connect', () => {
-                console.log('Socket conectado exitosamente:', newSocket.id);
-            });
-
-            return () => {
-                newSocket.disconnect();
-                console.log('Socket desconectado.');
-            };
-        } else {
-            // Si el usuario cierra sesión (user es null), nos aseguramos de desconectar el socket.
+        if (!user || !activeCompanyId) {
             if (socket) {
                 socket.disconnect();
                 setSocket(null);
             }
+            return;
         }
-        // 3. El efecto depende del estado del 'user'.
-        // Se ejecutará cuando el usuario inicie o cierre sesión.
-    }, [user]);
+
+        // 🔥 FORZAR reconexión al cambiar company
+        if (socket) {
+            socket.disconnect();
+        }
+
+        const newSocket = io("http://localhost:3000", {
+            withCredentials: true,
+        });
+
+        newSocket.on("connect", () => {
+            console.log("🟢 Socket conectado:", newSocket.id, "Company:", activeCompanyId);
+        });
+
+        newSocket.on("disconnect", () => {
+            console.log("🔴 Socket desconectado");
+        });
+
+        setSocket(newSocket);
+
+        return () => {
+            newSocket.disconnect();
+        };
+    }, [user, activeCompanyId]);
 
     return (
         <SocketContext.Provider value={{ socket }}>

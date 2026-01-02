@@ -10,7 +10,8 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react"
 import Orden from '@/@types/Order';
 import Product from '@/@types/Product';
-import { changeCompany } from "@/api/auth/login"
+import { useChangeCompany } from "@/hooks/useChangeCompany"
+
 
 function AdminLayout() {
     const location = useLocation()
@@ -19,6 +20,7 @@ function AdminLayout() {
     const { company, setCompany, primaryColor, secondaryColor, setUser, companies, user } = useAuth();
 
     const { socket } = useSocket();
+    const {changedCompany} = useChangeCompany();
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isChangingCompany, setIsChangingCompany] = useState(false);
@@ -80,29 +82,11 @@ function AdminLayout() {
         try {
             setIsChangingCompany(true);
 
-            // 🔐 Petición al backend
-            const response = await changeCompany(companySelected.id);
-
-            // 1️⃣ Guardar nuevo token
-            Cookies.set("token", response.token, { expires: 1 / 2 }); // 12h
-
-            // 2️⃣ Actualizar compañía en contexto
-            setCompany({
-                ...companySelected,
-                role: response.company.role,
-            });
-
-            // 3️⃣ Actualizar usuario si viene actualizado
-            if (response.user) {
-                setUser(response.user);
-                localStorage.setItem("user", JSON.stringify(response.user));
-            }
+            await changedCompany(companySelected.id);
 
             toast.success("Compañía cambiada correctamente");
 
-            // 4️⃣ Redirigir y resetear sockets / vistas
             navigate("/admin", { replace: true });
-
         } catch (error: any) {
             toast.error(
                 error?.response?.data?.message ||
@@ -113,6 +97,7 @@ function AdminLayout() {
             setIsPopoverOpen(false);
         }
     };
+
 
 
     const handleLogout = () => {

@@ -152,13 +152,14 @@ function ProductsPage() {
         };
 
         // Suscribimos el componente al evento 'newProduct'
-        socket.on('newProduct', handleNewProduct);
+        console.log("Subscripción al evento 'product:new'");
+        socket.on('product:new', handleNewProduct);
 
 
         // Función de limpieza: Es CRUCIAL desuscribirse del evento
         // cuando el componente se desmonte para evitar memory leaks.
         return () => {
-            socket.off('newProduct', handleNewProduct);
+            socket.off('product:new', handleNewProduct);
         };
 
     }, [socket]);
@@ -296,7 +297,7 @@ function ProductsPage() {
                     ) : (
                         <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] ">
                             {filteredProducts.map((product, index) => (
-                                <li key={index} className="flex justify-center ">
+                                <li key={product.id} className="flex justify-center ">
                                     <CardProduct
                                         product={product}
                                         index={index}

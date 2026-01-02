@@ -27,6 +27,7 @@ type AuthContextType = {
     secondaryColor: string;
     companies: Company[];
     setCompanies: (companies: Company[]) => void;
+    activeCompanyId: number | null;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,29 +44,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             const dataUserLocal = localStorage.getItem("user");
             const companiesLocal = localStorage.getItem("companies");
-            
+            const activeCompanyLocal = localStorage.getItem("activeCompany");
+
             if (dataUserLocal && companiesLocal) {
                 const userLocal = JSON.parse(dataUserLocal);
                 const companiesData = JSON.parse(companiesLocal);
-                
+
                 setUser(userLocal);
                 setCompanies(companiesData);
-                
-                // Si hay compañías, establecemos la primera como activa
-                if (companiesData && companiesData.length > 0) {
-                    const firstCompany = companiesData[0];
-                    setCompany(firstCompany);
-                    setRol(firstCompany.role);
-                    setPrimaryColor(firstCompany.primary_color || "#309b5c");
-                    setSecondaryColor(firstCompany.secondary_color || "#309b5c");
+
+                if (activeCompanyLocal) {
+                    const companyParsed = JSON.parse(activeCompanyLocal);
+                    setCompany(companyParsed);
+                    setRol(companyParsed.role);
+                    setPrimaryColor(companyParsed.primary_color || "#309b5c");
+                    setSecondaryColor(companyParsed.secondary_color || "#309b5c");
+                } else {
+                    const firstAvailable = companiesData.find(c => c.available);
+                    if (firstAvailable) {
+                        handleSetCompany(firstAvailable);
+                    }
                 }
             }
         } catch (error) {
-            // Limpiar el localStorage si hay datos corruptos
-            localStorage.removeItem("user");
-            localStorage.removeItem("companies");
+            localStorage.clear();
         }
     }, []);
+
 
     useEffect(() => {
         document.documentElement.style.setProperty("--primary-color", primaryColor);
@@ -74,23 +79,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const handleSetCompany = (newCompany: Company) => {
         if (!newCompany) return;
+
         setCompany(newCompany);
         setRol(newCompany.role);
+
         setPrimaryColor(newCompany.primary_color || "#309b5c");
         setSecondaryColor(newCompany.secondary_color || "#309b5c");
+
+        localStorage.setItem("activeCompany", JSON.stringify(newCompany));
     };
 
+
     return (
-        <AuthContext.Provider value={{ 
-            user, 
-            rol, 
-            setUser, 
-            company, 
-            setCompany: handleSetCompany, 
-            primaryColor, 
+        <AuthContext.Provider value={{
+            user,
+            rol,
+            setUser,
+            company,
+            setCompany: handleSetCompany,
+            primaryColor,
             secondaryColor,
             companies,
-            setCompanies
+            setCompanies,
+            activeCompanyId: company?.id ?? null
         }}>
             {children}
         </AuthContext.Provider>
