@@ -25,7 +25,7 @@ function LandingPage() {
                             <h2 className="text-4xl md:text-5xl lg:text-8xl font-bold mb-5 flex flex-col  w-full">Todo lo que tu <span>negocio necesita</span></h2>
                             <h2 className="text-xl md:w-[70%] text-center">Haz que todo sea mas <span className="text-green-500">facil y mas rapido</span> si tu factura la tienes en tu telefono</h2>
                             <div className="flex flex-row justify-center gap-5 mt-5">
-                                <Button className="md:text-xl bg-green-700 md:p-6 mb-3 "><Link to="/createCompany">Empieza gratis</Link></Button>
+                                <Button className="md:text-xl bg-green-700 md:p-6 mb-3 "><Link to="/auth">Empieza gratis</Link></Button>
                                 <Button variant={"outline"} className="md:text-xl md:p-6 mb-3 "><Link to="/">Mirar Video</Link></Button>
                             </div>
                         </div>
@@ -106,7 +106,7 @@ function LandingPage() {
                     />
                 </div>
                 <div className="flex flex-col justify-center items-center md:w-[70%]">
-                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-3 text-center ">Maneja tu compañia facil con los estado de ordees en Amin</h2>
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-3 text-center ">Maneja tu compañia facil con los estado de ordenes en Amin</h2>
                     <p className="md:w-[70%] text-center">Con Amin tu expericiencia va ser rapida y sencilla con tu equipo de trabajo</p>
                     <div className="mt-8 flex flex-col gap-6 w-full md:w-[80%]">
 
@@ -133,8 +133,7 @@ function LandingPage() {
                                 <span className="font-semibold text-black">
                                     Órdenes claras y organizadas:
                                 </span>{" "}
-                                Identifica fácilmente órdenes en proceso, listas para servir y
-                                completadas.
+                                Identifica fácilmente órdenes en proceso, y completadas.
                             </p>
                         </div>
 
@@ -165,8 +164,8 @@ function LandingPage() {
                             <p>1</p>
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-center">
-                            <h3 className="text-2xl font-bold mb-2">Selecciona tus productos</h3>
-                            <p className="text-lg">Agrega productos a tu orden de manera rapida y sencilla.</p>
+                            <h3 className="text-xl lg:text-2xl font-bold mb-2">Selecciona tus productos</h3>
+                            <p className="text-sm lg:text-lg">Agrega productos a tu orden de manera rapida y sencilla.</p>
                         </div>
                     </div>
                     <div className=" rounded-xl p-6 max-w-2xl text-center mb-10 w-full gap-3 flex border-2 ">
@@ -174,8 +173,8 @@ function LandingPage() {
                             <p>2</p>
                         </div>
                         <div className="flex flex-col justify-center items-center flex-1">
-                            <h3 className="text-2xl font-bold mb-2">Genera la factura</h3>
-                            <p className="text-lg">Crea facturas profesionales en segundos.</p>
+                            <h3 className="text-xl lg:text-2xl font-bold mb-2">Administra los estados de tus órdenes</h3>
+                            <p className="text-sm lg:text-lg">Visualiza y actualiza el estado de cada orden fácilmente: pendiente, en proceso o completada.</p>
                         </div>
                     </div>
                     <div className=" rounded-xl p-6 max-w-2xl text-center mb-10 w-full gap-3 flex border-2">
@@ -183,8 +182,8 @@ function LandingPage() {
                             <p>3</p>
                         </div>
                         <div className="flex flex-col justify-center items-center flex-1">
-                            <h3 className="text-2xl font-bold mb-2">Envía y guarda</h3>
-                            <p className="text-lg w-[90%]">Envía facturas por correo electrónico y guarda un registro digital.</p>
+                            <h3 className="text-xl font-bold mb-2 lg:text-2xl">Lleva tu contabilidad</h3>
+                            <p className="text-sm lg:text-lg">Mantén un registro claro de tus órdenes y ganancias directamente en el sistema, sin complicaciones.</p>
                         </div>
                     </div>
 
@@ -202,65 +201,69 @@ function LandingPage() {
                 </div>
             </section>
             {/*Pricing*/}
-            <section className="mb-10">
-                <div className="bg-[#f0f1ec] flex flex-col justify-center items-center text-center py-10 ">
-                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">Elige tu plan</h2>
-                    <p className="mb-4">Selecciona el plan que mejor se adapte a tus necesidades.</p>
-                    <div className="relative  w-full flex justify-center items-center md:h-48">
-                        <div className="md:absolute flex flex-col md:flex-row justify-center items-center gap-10 md:bottom-[-60%]">
-                            <div className="bg-white p-6 rounded-xl shadow-lg mr-4">
-                                <h3 className="font-bold text-left text-2xl mb-4">Plan Pro</h3>
-                                <p className="font-bold text-left mb-2 flex items-baseline">
-                                    <span className="text-2xl align-text-top h-full">$</span>
-                                    <span className="text-5xl">100.000</span>
-                                    <span className="text-3xl">/2 Meses</span>
-                                </p>
-                                <Separator className=".y2" />
-                                <ul className="flex flex-col gap-2 text-left">
-                                    <li>✔ Facturación electrónica</li>
-                                    <li>✔ Soporte prioritario</li>
-                                    <li>✔ Acceso desde cualquier dispositivo</li>
-                                </ul>
-                                <Button className="mt-6 bg-green-700 text-white w-full rounded-xl"><Link to="/">Empieza gratis</Link></Button>
-                            </div>
-                            {/*
-                            <div className="bg-white p-6 rounded-xl shadow-lg mr-4">
-                                <h3>Pro</h3>
-                                <p><span>$</span>100.000<span>/2 Mese</span></p>
-                                <Separator className="my-4" />
-                                <ul className="flex flex-col gap-2 text-left">
-                                    <li>✔ Facturación electrónica</li>
-                                    <li>✔ Soporte prioritario</li>
-                                    <li>✔ Acceso desde cualquier dispositivo</li>
-                                </ul>
-                                <Button className="mt-6 bg-green-700 text-white"><Link to="/">Empieza gratis</Link></Button>
-                            </div>
-                            <div className="bg-white p-6 rounded-xl shadow-lg mr-4">
-                                <h3>Pro</h3>
-                                <p><span>$</span>100.000<span>/2 Mese</span></p>
-                                <Separator className="my-4" />
-                                <ul className="flex flex-col gap-2 text-left">
-                                    <li>✔ Facturación electrónica</li>
-                                    <li>✔ Soporte prioritario</li>
-                                    <li>✔ Acceso desde cualquier dispositivo</li>
-                                </ul>
-                                <Button className="mt-6 bg-green-700 text-white"><Link to="/">Empieza gratis</Link></Button>
-                            </div>
-                            */}
 
-                        </div>
-                        <div>
-                            <h2></h2>
-                            <p></p>
-                            <p></p>
-                        </div>
-                    </div>
-
-                </div>
-                <div className="bg-green-100 h-32">
-
-                </div>
-            </section>
+            {
+                /*
+                            <section className="mb-10">
+                                <div className="bg-[#f0f1ec] flex flex-col justify-center items-center text-center py-10 ">
+                                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">Elige tu plan</h2>
+                                    <p className="mb-4">Selecciona el plan que mejor se adapte a tus necesidades.</p>
+                                    <div className="relative  w-full flex justify-center items-center md:h-48">
+                                        <div className="md:absolute flex flex-col md:flex-row justify-center items-center gap-10 md:bottom-[-60%]">
+                                            <div className="bg-white p-6 rounded-xl shadow-lg mr-4">
+                                                <h3 className="font-bold text-left text-2xl mb-4">Plan Pro</h3>
+                                                <p className="font-bold text-left mb-2 flex items-baseline">
+                                                    <span className="text-2xl align-text-top h-full">$</span>
+                                                    <span className="text-5xl">100.000</span>
+                                                    <span className="text-3xl">/2 Meses</span>
+                                                </p>
+                                                <Separator className=".y2" />
+                                                <ul className="flex flex-col gap-2 text-left">
+                                                    <li>✔ Facturación electrónica</li>
+                                                    <li>✔ Soporte prioritario</li>
+                                                    <li>✔ Acceso desde cualquier dispositivo</li>
+                                                </ul>
+                                                <Button className="mt-6 bg-green-700 text-white w-full rounded-xl"><Link to="/">Empieza gratis</Link></Button>
+                                            </div>
+                                            {/*
+                                            <div className="bg-white p-6 rounded-xl shadow-lg mr-4">
+                                                <h3>Pro</h3>
+                                                <p><span>$</span>100.000<span>/2 Mese</span></p>
+                                                <Separator className="my-4" />
+                                                <ul className="flex flex-col gap-2 text-left">
+                                                    <li>✔ Facturación electrónica</li>
+                                                    <li>✔ Soporte prioritario</li>
+                                                    <li>✔ Acceso desde cualquier dispositivo</li>
+                                                </ul>
+                                                <Button className="mt-6 bg-green-700 text-white"><Link to="/">Empieza gratis</Link></Button>
+                                            </div>
+                                            <div className="bg-white p-6 rounded-xl shadow-lg mr-4">
+                                                <h3>Pro</h3>
+                                                <p><span>$</span>100.000<span>/2 Mese</span></p>
+                                                <Separator className="my-4" />
+                                                <ul className="flex flex-col gap-2 text-left">
+                                                    <li>✔ Facturación electrónica</li>
+                                                    <li>✔ Soporte prioritario</li>
+                                                    <li>✔ Acceso desde cualquier dispositivo</li>
+                                                </ul>
+                                                <Button className="mt-6 bg-green-700 text-white"><Link to="/">Empieza gratis</Link></Button>
+                                            </div>
+                                            /}
+                
+                                        </div>
+                                        <div>
+                                            <h2></h2>
+                                            <p></p>
+                                            <p></p>
+                                        </div>
+                                    </div>
+                
+                                </div>
+                                <div className="bg-green-100 h-32">
+                
+                                </div>
+                            </section>*/
+            }
 
             {/*Preguntas Frecuentes*/}
             <section className="flex flex-col justify-center items-center gap-5 w-full min-h-[520px] md:min-h-[800px]">
@@ -283,7 +286,7 @@ function LandingPage() {
                     {[
                         {
                             q: "¿Qué es Amin?",
-                            a: "Amin es un sistema POS en la nube diseñado para restaurantes y negocios que necesitan gestionar ventas, inventario y facturación electrónica de forma sencilla.",
+                            a: "Amin es un sistema POS en la nube diseñado para restaurantes y negocios que necesitan gestionar ventas y inventario.",
                         },
                         {
                             q: "¿Amin es fácil de usar?",
@@ -317,7 +320,7 @@ function LandingPage() {
             <section className="bg-green-700 flex flex-col justify-center items-center py-20 gap-5 text-white">
                 <h2 className="text-4xl font-bold text-center">¿Listo para comenzar?</h2>
                 <p className="text-center max-w-2xl">Empieza a usar Amin hoy mismo y lleva la gestión de tu negocio al siguiente nivel.</p>
-                <Button className="md:text-2xl bg-white text-green-700 md:p-6 "><Link to="/">Empieza gratis</Link></Button>
+                <Button className="md:text-2xl bg-white text-green-700 md:p-6 "><Link to="/auth">Empieza gratis</Link></Button>
             </section>
         </>
     )
