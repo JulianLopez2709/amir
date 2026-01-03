@@ -10,7 +10,7 @@ function SettingPage() {
     return (
         <div className='relative p-2'>
             {isMaintenance && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center">
+                <div className="absolute inset-0 z-10 flex top-20 justify-center h-44 p-2">
                     <div className="bg-white/90 backdrop-blur rounded-xl border shadow-lg p-8 max-w-sm text-center">
                         <h3 className="text-lg font-semibold text-gray-800 mb-2">
                             Configuración en mantenimiento
