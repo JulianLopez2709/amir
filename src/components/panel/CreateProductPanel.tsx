@@ -152,7 +152,6 @@ function CreateProductPanel() {
                 formData.append("image", imageFile) // 🔥 ESTE NOMBRE DEBE COINCIDIR
             }
             
-            console.log("formData entries:", formData.entries() )
             await createProduct(formData)
 
             toast.success("Producto creado correctamente")

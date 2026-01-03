@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext"
 import { getOrderById } from "@/api/order/getAllOrdersByCompany";
 
-type PanelMode = 'order' | 'create-product';
+type PanelMode = 'order' | 'create-product' | 'edit-order';
 
 function ProductsPage() {
     const [searchParams] = useSearchParams();
@@ -132,7 +132,7 @@ function ProductsPage() {
 
     useEffect(() => {
         if (isEditingOrder) {
-            setModePanelRight("order");
+            setModePanelRight("edit-order");
             setShoppingCart(true);
         }
     }, [ordenId]);
@@ -152,13 +152,14 @@ function ProductsPage() {
         };
 
         // Suscribimos el componente al evento 'newProduct'
-        socket.on('newProduct', handleNewProduct);
+        console.log("Subscripción al evento 'product:new'");
+        socket.on('product:new', handleNewProduct);
 
 
         // Función de limpieza: Es CRUCIAL desuscribirse del evento
         // cuando el componente se desmonte para evitar memory leaks.
         return () => {
-            socket.off('newProduct', handleNewProduct);
+            socket.off('product:new', handleNewProduct);
         };
 
     }, [socket]);
@@ -218,7 +219,6 @@ function ProductsPage() {
             return [...prev, productToOrder]
         })
 
-        setModePanelRight("order")
     }
 
 
@@ -295,9 +295,9 @@ function ProductsPage() {
                             )}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] ">
+                        <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] px-1">
                             {filteredProducts.map((product, index) => (
-                                <li key={index} className="flex justify-center ">
+                                <li key={product.id} className="flex justify-center ">
                                     <CardProduct
                                         product={product}
                                         index={index}
@@ -329,7 +329,6 @@ function ProductsPage() {
                     productsAdded={listProductsAdded}
                     setProductsAdded={setListProductsAdded}
                     onClose={() => setShoppingCart(false)}
-                    orderMode={isEditingOrder ? "edit" : "create"}
                     orderId={ordenId ?? undefined}
                 />
             </div>

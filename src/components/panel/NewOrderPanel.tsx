@@ -1,9 +1,9 @@
 import Status from "../admin/Status"
 import { Button } from "../ui/button"
 import { BoxesIcon, X } from "lucide-react"
-import { newProductToOrder, CreateOrderBody, ProductToOrder, Order, ProductOption, SelectedVariant } from "@/@types/Order"
+import { CreateOrderBody, ProductToOrder} from "@/@types/Order"
 import { toast } from "sonner";
-import { createOrderByCompany, getOrderById, updateOrder, updateOrderStatus } from "@/api/order/getAllOrdersByCompany";
+import { createOrderByCompany} from "@/api/order/getAllOrdersByCompany";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
@@ -12,56 +12,10 @@ import { ScrollArea } from "../ui/scroll-area";
 interface Props {
     productsAdded: ProductToOrder[];
     setProductsAdded: React.Dispatch<React.SetStateAction<ProductToOrder[]>>;
-    mode: "create" | "edit"
-    orderId?: string
-}
-
-const mapOrderToProductsAdded = (order: Order): ProductToOrder[] => {
-    return order.products.map((op) => ({
-        id: op.id, // 👈 FUNDAMENTAL PARA UPDATE
-        product: {
-            id: op.product_snapshot.id,
-            name: op.product_snapshot.name,
-            price_selling: op.product_snapshot.price,
-            price: op.product_snapshot.price,
-            imgUrl: "",
-            description: "",
-            optionsSelected: op.product_snapshot.optionsSelected,
-        },
-        quantity: op.quantity, // 👈 viene de productOrder
-        notes: op.notes,
-        selectedOptions: mapOptionsToSelectedVariants(
-            op.product_snapshot.optionsSelected
-        ),
-    }))
-}
-
-const mapOptionsToSelectedVariants = (
-    options: ProductOption[]
-): SelectedVariant[] => {
-    const grouped = new Map<string, SelectedVariant>()
-
-    options.forEach((opt) => {
-        if (!grouped.has(opt.variantName)) {
-            grouped.set(opt.variantName, {
-                variantName: opt.variantName,
-                options: [],
-            })
-        }
-
-        grouped.get(opt.variantName)!.options.push({
-            name: opt.optionName,
-            optionId: opt.optionId,
-            extraPrice: opt.extraPrice,
-        })
-    })
-
-    return Array.from(grouped.values())
 }
 
 
-
-function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props) {
+function NewOrderPanel({ productsAdded, setProductsAdded }: Props) {
     const navigate = useNavigate()
     const { company } = useAuth();
     const [totalPrice, setTotalPrice] = useState(0);
@@ -90,47 +44,38 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
 
     async function submitOrder() {
         if (productsAdded.length === 0) {
-            toast.error("La orden no puede estar vacía")
-            return
+            toast.error("La orden no puede estar vacía");
+            return;
         }
 
         if (!company?.id) {
-            toast.error("Compañía no válida")
-            return
+            toast.error("Compañía no válida");
+            return;
         }
 
-        setIsLoading(true)
+        setIsLoading(true);
 
         const orderBody: CreateOrderBody = {
             companyId: company.id,
             detail: {
                 metodo_pago: "Efectivo",
-                notas: mode === "edit"
-                    ? "Orden actualizada desde el panel"
-                    : "Orden creada desde el panel",
+                notas: "Orden creada desde el panel",
             },
-            products: productsAdded.map(mapProductToBackend)
-        }
+            products: productsAdded.map(mapProductToBackend),
+        };
 
         try {
-            if (mode === "create") {
-                await createOrderByCompany(orderBody)
-                toast.success("Orden creada con éxito")
-            } else {
-                if (!orderId) throw new Error("Order ID requerido")
-                await updateOrder(orderId, orderBody) // 👈 TU API PUT/PATCH
-                toast.success("Orden actualizada con éxito")
-            }
-
-            setProductsAdded([])
-            navigate("/admin/orders")
+            await createOrderByCompany(orderBody);
+            toast.success("Orden creada con éxito");
+            setProductsAdded([]);
+            navigate("/admin/orders");
         } catch (error) {
-            toast.error("Error al guardar la orden")
-            console.error(error)
+            toast.error("Error al guardar la orden");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
     }
+
 
 
     const mapProductToBackend = (
@@ -161,30 +106,12 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
         return (basePrice + extras) * p.quantity
     }
 
-    useEffect(() => {
-        if (mode === "edit" && orderId) {
-            loadOrder()
-        }
-    }, [mode, orderId])
-
-    async function loadOrder() {
-        try {
-            const order = await getOrderById(orderId!) // API GET /orders/:id
-            console.log("Orden cargada:", order)
-            const mappedProducts = mapOrderToProductsAdded(order)
-            console.log("Productos mapeados antes de setear:", mappedProducts)
-            setProductsAdded(mappedProducts)
-        } catch (error) {
-            toast.error("No se pudo cargar la orden")
-            navigate("/admin/orders")
-        }
-    }
 
 
     return (
         <div className="flex flex-col h-full">
             <div className="flex justify-between w-full">
-                <h2 className="font-bold text-xl">{mode === "edit" ? "Editar Orden" : "Nueva Orden"}</h2>
+                <h2 className="font-bold text-xl">Nueva Orden</h2>
                 <Status name="new" color="purple" />
             </div>
             <h3 className="font-bold text-lg">Orden Items {productsAdded.length}</h3>
@@ -306,9 +233,7 @@ function NewOrderPanel({ productsAdded, setProductsAdded, mode, orderId }: Props
                 >
                     {isLoading
                         ? "Guardando..."
-                        : mode === "edit"
-                            ? "Actualizar orden"
-                            : "Crear nueva orden"}
+                        : "Crear nueva orden"}
                 </Button>
 
             </div>

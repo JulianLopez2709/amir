@@ -1,4 +1,4 @@
-import { CreateOrderBody, OrdenReques, Order, ProductToOrder } from "@/@types/Order"
+import { CreateOrderBody, OrdenReques, Order, ProductToOrder, UpdateBody } from "@/@types/Order"
 import apiFetch from "../client"
 
 export const getAllOrdersByCompany = async (companyId:number) => {
@@ -61,12 +61,11 @@ export const updateOrderStatus = async (
 
 export const updateOrder = async (
   orderId: string,
-  body: CreateOrderBody
+  body: UpdateBody,
   //paymentMethod?: 'cash' | 'card'
 ) => {
-  console.log(orderId, status)
-  const response = await apiFetch<OrdenReques>(`order/${orderId}/status`, {
-    method: 'PATCH',
+  const response = await apiFetch<OrdenReques>(`order/${orderId}`, {
+    method: 'PUT',
     body: JSON.stringify(body),
   });
 

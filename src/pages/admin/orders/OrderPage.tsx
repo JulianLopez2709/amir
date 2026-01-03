@@ -1,4 +1,4 @@
-import { OrdenReques, Order, OrderProduct } from '@/@types/Order'
+import { OrdenReques, Order, OrderProduct, OrderStatus } from '@/@types/Order'
 import { getAllOrdersByCompany, updateOrderStatus } from '@/api/order/getAllOrdersByCompany'
 import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
@@ -28,11 +28,23 @@ import {
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { STATUS_CONFIG } from '@/config/statusConfig'
+import OrderFilterTabs from '@/components/admin/order/OrderFilterTabs'
+
+export type OrderFilter = 'ALL' | 'pending' | 'in_progress' | 'completed';
+
+const ORDER_FILTERS: {
+  value: OrderFilter
+  label: string
+}[] = [
+    { value: 'ALL', label: 'Todas' },
+    { value: 'pending', label: 'Por confirmar' },
+    { value: 'in_progress', label: 'En proceso' },
+    { value: 'completed', label: 'Finalizadas' },
+  ]
 
 function OrderPage() {
   type OrderAction = 'confirm' | 'complete' | null;
   type PaymentMethod = 'cash' | 'card' | null;
-
 
   const { company } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +54,7 @@ function OrderPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [listOrder, setListOrder] = useState<Order[]>([]);
   const [selectOrden, setSelectOrden] = useState<Order | null>(null);
+  const [orderFilter, setOrderFilter] = useState<OrderFilter>('ALL');
 
   const { socket } = useSocket()
 
@@ -56,6 +69,11 @@ function OrderPage() {
     selectOrden?.data[0].status !== 'completed' &&
     selectOrden?.status !== 'canceled' &&
     selectOrden?.status !== 'expense';*/
+  const filteredOrders = listOrder.filter(order => {
+    if (orderFilter === 'ALL') return true;
+    return order.status === orderFilter;
+  });
+
 
   const handleExpenseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -119,56 +137,70 @@ function OrderPage() {
     }
   }
 
+
+
+
+  const today = new Date().toLocaleDateString('es-CO', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+
   useEffect(() => {
     if (!socket) return;
 
-    // Función que se ejecutará cuando llegue un nuevo producto
-    const handleNewOrder = (newOrder: Order) => {
-      // añadiendo la nueva orden al principio de la lista.
-      setListOrder(prevList => [newOrder, ...prevList]);
+    const handleOrderCreated = (order: Order) => {
+      /**Hay un error aqui - hay algun dato que hace falta*/
+      if (!order || !order.id || !order.status) {
+        console.error("Orden inválida recibida por socket:", order);
+        return;
+      }
+
+      setListOrder(prev => [order, ...prev]);
+
+      toast.success("🧾 Nueva orden creada", {
+        description: `Pedido #${order.id.split("-")[0]}`
+      });
     };
 
-    // Listener para cambios de estado en las órdenes
-    const handleOrderStatusChange = (updatedOrder: OrdenReques) => {
-      /*setListOrder(prevList => {
-        // Busca la orden que fue actualizada por su ID
-        const index = prevList.findIndex(order => order.id === updatedOrder.id);
 
-        // Si la encuentra, la reemplaza con la versión actualizada
-        if (index !== -1) {
-          const newList = [...prevList];
-          newList[index] = updatedOrder;
-          return newList;
-        }
+    socket.on("order:created", handleOrderCreated);
 
-        // Si no la encuentra (por ejemplo, si la lista se carga por primera vez),
-        // podría simplemente devolver la lista anterior o agregarla.
-        // En este caso, la reemplazaremos para mantener el orden.
-        return prevList;
-      });*/
-    };
-
-    // Suscribimos el componente a ambos eventos
-    socket.on('newOrder', handleNewOrder);
-    socket.on('orderStatusChanged', handleOrderStatusChange);
-
-    // Función de limpieza: desuscribimos ambos eventos
     return () => {
-      socket.off('newOrder', handleNewOrder);
-      socket.off('orderStatusChanged', handleOrderStatusChange);
+      socket.off("order:created", handleOrderCreated);
     };
-
   }, [socket]);
 
-  /*
-  
-  
-  
-  
-  
-  
-  
-  */
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleStatusChanged = ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
+      console.log("📦 Estado de orden actualizado:", orderId, status);
+
+      // 1️⃣ Actualizar lista
+      setListOrder(prev =>
+        prev.map(order =>
+          order.id === orderId
+            ? { ...order, status }
+            : order
+        )
+      );
+
+      // 2️⃣ Toast SOLO si el usuario está viendo órdenes
+      toast.info("📌 Estado de orden actualizado", {
+        description: `Pedido #${orderId.split("-")[0]} → ${status}`,
+      });
+    };
+
+    socket.on("order:statusChanged", handleStatusChanged);
+
+    return () => {
+      socket.off("order:statusChanged", handleStatusChanged);
+    };
+  }, [socket]);
+
   useEffect(() => {
     fetchData();
     setSelectOrden(null);
@@ -246,33 +278,120 @@ function OrderPage() {
           if (!open) closeSheet()
         }}
       >
-        <SheetContent side="right" className="w-[400px] sm:w-[450px] flex flex-col">
+        <SheetContent
+          side="right"
+          className="w-[400px] sm:w-[460px] flex flex-col gap-6 px-1 py-3"
+        >
 
-          <SheetHeader>
+          {/* ===== HEADER ===== */}
+          <SheetHeader className="border-b pb-4">
             {selectOrden && (
-              <SheetTitle>
-                Pedido #{selectOrden.id.split('-')[0]}
-              </SheetTitle>
+              <div className="flex items-center justify-between">
+                <SheetTitle className="text-lg font-bold">
+                  Pedido #{selectOrden.id.split('-')[0]}
+                </SheetTitle>
+
+                <div>{selectOrden.status}</div>
+              </div>
             )}
-            <SheetDescription>
+
+            <SheetDescription className="text-sm text-gray-500">
               {pendingAction === 'confirm'
-                ? 'Confirma que la orden está lista para continuar'
-                : 'Selecciona el método de pago para finalizar la orden'}
+                ? 'Confirma la orden para iniciar su preparación'
+                : 'Finaliza la orden una vez entregada'}
             </SheetDescription>
           </SheetHeader>
 
-          {/* CONTENIDO flex-1 mt-6 space-y-6 overflow-y-auto*/}
-          <div className="mt-6 flex flex-col justify-between h-full">
+          {/* ===== CONTENIDO ===== */}
+          <div className="flex-1 flex flex-col gap-6 overflow-y-auto">
+
+            {/* ===== RESUMEN ===== */}
+            {selectOrden && (
+              <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <p className="text-gray-500">Fecha</p>
+                  <p className="font-medium">
+                    {new Date(selectOrden.createAt).toLocaleString('es-CO')}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500">Total</p>
+                  <p className="font-bold text-green-700">
+                    ${selectOrden.total_price?.toLocaleString()}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500">Productos</p>
+                  <p className="font-medium">
+                    {selectOrden.products?.length || 0}
+                  </p>
+                </div>
+
+              </div>
+            )}
+
+            {/* ===== PRODUCTOS ===== */}
+            {selectOrden?.products && (
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm text-gray-700">
+                  Productos
+                </h4>
+
+                <div className="space-y-2 max-h-[260px] overflow-y-auto pr-2">
+                  {selectOrden.products.map((prod: OrderProduct, idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex justify-between items-start border rounded-md p-3 text-sm"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <p className="font-medium">
+                          {prod.product_snapshot?.name || 'Producto'}
+                        </p>
+
+                        {prod.product_snapshot?.optionsSelected?.length > 0 && (
+                          <ul className="text-xs text-gray-500">
+                            {prod.product_snapshot.optionsSelected.map((opt, i) => (
+                              <li key={i}>
+                                • {opt.variantName}: {opt.optionName}
+                                {opt.extraPrice > 0 && (
+                                  <span className="ml-1 text-green-700">
+                                    (+${opt.extraPrice})
+                                  </span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        {prod.notes && (
+                          <p className="text-xs text-gray-400">
+                            Nota: {prod.notes}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="text-right font-bold">
+                        x{prod.quantity}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ===== ACCIONES ===== */}
+          <div className="space-y-3 border-t pt-4">
 
             {/* CONFIRMAR */}
             {pendingAction === 'confirm' && (
               <Button
-                className="w-full bg-blue-600 text-white"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={async () => {
-                  //await updateOrderStatus(selectOrden!.status, 'confirmed');
-                  toast.success("Orden confirmada");
-                  closeSheet();
-                  fetchData();
+                  await updateOrderStatus(selectOrden!.id, 'in_progress')
+                  closeSheet()
                 }}
               >
                 Confirmar Orden
@@ -281,44 +400,17 @@ function OrderPage() {
 
             {/* FINALIZAR */}
             {pendingAction === 'complete' && (
-              <>
-                <p className="font-bold">Método de pago</p>
-
-                <div className="flex gap-4">
-                  <Button
-                    variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                    onClick={() => setPaymentMethod('cash')}
-                    className="flex-1"
-                  >
-                    <CircleDollarSign className="mr-2" /> Efectivo
-                  </Button>
-
-                  <Button
-                    variant={paymentMethod === 'card' ? 'default' : 'outline'}
-                    onClick={() => setPaymentMethod('card')}
-                    className="flex-1"
-                  >
-                    <CreditCard className="mr-2" /> Tarjeta
-                  </Button>
-                </div>
-
-                <Button
-                  className="w-full bg-green-600"
-                  disabled={!paymentMethod}
-                  onClick={async () => {
-                    await updateOrderStatus(
-                      selectOrden!.id,
-                      'completed',
-                      //paymentMethod
-                    )
-                    toast.success("Orden finalizada");
-                    closeSheet();
-                    fetchData();
-                  }}
-                >
-                  Finalizar Orden
-                </Button>
-              </>
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                onClick={async () => {
+                  await updateOrderStatus(selectOrden!.id, 'completed')
+                  toast.success("Orden finalizada")
+                  closeSheet()
+                  fetchData()
+                }}
+              >
+                Finalizar Orden
+              </Button>
             )}
 
             <Button variant="outline" onClick={closeSheet}>
@@ -329,17 +421,23 @@ function OrderPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Dialog de gasto - encabezado*/}
-      <div className='px-2 md:px-4 flex flex-col gap-1 pb-2'>
 
-        <div className=' flex w-full justify-between items-center'>
-          <h2 className='font-bold md:text-2xl'>Lista de Pedidos</h2>
-          <p>Miercoles, 18 Agosto 2025</p>
+      {/* Dialog de gasto - encabezado*/}
+      <div className="px-2 md:px-4 pb-3 flex flex-col gap-3">
+
+        <div className="flex justify-between items-center">
+          <h2 className="font-bold text-lg md:text-2xl">
+            Lista de Pedidos
+          </h2>
+          <p className="capitalize text-sm text-gray-500">{today}</p>
         </div>
-        <div className='md:flex justify-between gap-1'>
+
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
 
           <div className='flex gap-2'>
             {/* --- DIALOG PARA AGREGAR GASTO --- */}
+            {/*
+
             <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
               <DialogTrigger asChild>
                 <Button className='text-white bg-red-600 hover:bg-red-700'>- <p className='hidden md:flex'> Agregar Gasto</p></Button>
@@ -392,47 +490,69 @@ function OrderPage() {
                 </form>
               </DialogContent>
             </Dialog>
+            */}
+
+
             {/* --- FIN DEL DIALOG --- */}
 
-            <Link to="/admin/products?orden">
-              <Button variant="default" className='h-full w-full cursor-pointer bg-green-700'>+ Nuevo Pedido</Button>
+            <Link to="/admin/products?orden" className="w-full md:w-auto">
+              <Button
+                className="w-full md:w-auto bg-green-700 hover:bg-green-800 text-white font-semibold"
+              >
+                + Nuevo Pedido
+              </Button>
             </Link>
           </div>
-          <div className='flex gap-2'>
-            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-green-800 text-white'>
-              <p className='cursor-pointer'>Todos</p>
-            </div>
-            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-white '>
-              <p className='cursor-pointer '>Por confirmar</p>
-            </div>
-            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-white'>
-              <p className='cursor-pointer '>En proceso</p>
-            </div>
-            <div className='p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center bg-white'>
-              <p className='cursor-pointer '>Finalizada</p>
-            </div>
+          <div className="w-full overflow-x-auto">
+            <OrderFilterTabs
+              value={orderFilter}
+              onChange={setOrderFilter}
+            />
           </div>
+
+
         </div>
       </div>
       {/*NOTA: ARREGLAR EL BACKEND PARA QUE ME DEVUELVA UN ORDEN ESPECIFICO SOLO HAY UNA VARIANTE 
       Y ESTA TIENE MUCHAS OPCIONES. */ }
       {/* lista de ordenes  */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-4 overflow-y-auto h-[80vh]">
-        {listOrder.map((orden, index) => (
-          <li key={index} className='list-none'>
-            <CardOrder
-              item={orden}
-              onClick={() => {
-                setSelectOrden(orden)
-                //setDetail(true);
-              }}
-              onConfirm={() => openOrderAction(orden, 'confirm')}
-              onComplete={() => openOrderAction(orden, 'complete')}
-              index={index + 1}
-              selectOrden={selectOrden}
-            />
-          </li>
-        ))}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 px-4 overflow-y-auto h-[80vh]">
+        {filteredOrders.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 mb-4">
+              <ShoppingBag className="h-7 w-7 text-gray-400" />
+            </div>
+
+            <h3 className="text-sm font-semibold text-gray-700">
+              No hay pedidos
+            </h3>
+
+            <p className="text-sm text-gray-500 mt-1 max-w-xs">
+              Los pedidos se mostrarán aquí.
+            </p>
+
+            {orderFilter === 'ALL' && (
+              <Link to="/admin/products?orden">
+                <button className="mt-5 inline-flex items-center rounded-md bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 transition">
+                  + Crear primer pedido
+                </button>
+              </Link>
+            )}
+          </div>
+        ) : (
+          filteredOrders.map((orden, index) => (
+            <li key={orden.id} className="list-none">
+              <CardOrder
+                item={orden}
+                onClick={() => setSelectOrden(orden)}
+                onConfirm={() => openOrderAction(orden, 'confirm')}
+                onComplete={() => openOrderAction(orden, 'complete')}
+                index={index + 1}
+                selectOrden={selectOrden}
+              />
+            </li>
+          ))
+        )}
       </div>
 
       {/* Barra inferior fija en móvil */}

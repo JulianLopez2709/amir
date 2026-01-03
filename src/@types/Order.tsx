@@ -12,7 +12,7 @@ export interface OrdenReques {
 
 export interface Order {
   id: string
-  status: 'new' | 'in_progress' | 'completed' | 'canceled' | 'pending'
+  status: OrderStatus
   total_price: number
   createAt: string
   updatedAt: string
@@ -21,9 +21,13 @@ export interface Order {
   products: OrderProduct[]
 }
 
-export interface OrderStatus {
-  status: 'new' | 'in_progress' | 'completed' | 'canceled' | 'pending'
-}
+export type OrderStatus =
+  | 'new'
+  | 'pending'
+  | 'in_progress'
+  | 'completed'
+  | 'canceled';
+
 
 export interface OrderDetail {
   notas?: string
@@ -126,6 +130,26 @@ export interface CreateOrderBody {
     selectedOptions: number[]
   }[]
 }
+
+export interface UpdateBody {
+  companyId: number,
+  detail: {
+    cliente?: {
+      nombre: string
+      telefono: string
+    },
+    metodo_pago: string
+    notas?: string
+  },
+  products: {
+    imgUrl?: string
+    productId: string
+    quantity: number
+    notes?: string
+    selectedOptions: number[]
+  }[]
+}
+
 
 
 

@@ -39,7 +39,7 @@ const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }:
 
 
     return (
-        <div className={`p-3 bg-white rounded-xl cursor-pointer hover:bg-gray-100 shadow-2xs 
+        <div className={`p-3 bg-white rounded-xl cursor-pointer hover:bg-gray-50 shadow-2xs 
                 ${item.id === selectOrden?.id ? 'border-b-2 border-green-500' : ''}`} onClick={onClick}>
 
             <Dialog open={!!orderToCancel} onOpenChange={() => setOrderToCancel(null)}>
@@ -98,7 +98,7 @@ const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }:
                 <div className='flex flex-col gap-1'>
                     {
                         item.products?.map((p, index) => (
-                            <div className='flex gap-3 rounded-xl border-gray-200 p-2 border-2 bg-gray-100' key={index}>
+                            <div className='flex gap-3 border rounded-lg bg-white shadow-sm p-3' key={index}>
                                 <div className='hidden lg:flex rounded-full size-10 bg-gray-100 items-center justify-center'>
                                     <BoxesIcon className='size-7 text-gray-500' />
                                 </div>
@@ -113,22 +113,33 @@ const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }:
                                         </div>
                                     </div>
                                     <div>
-                                        {p.product_snapshot.optionsSelected.map((opc, index) => (
-                                            <div className='justify-between items-center flex mb-1'>
-                                                <div className='flex gap-2 items-center'>
-                                                    <p>{opc.variantName}</p>
-                                                    <div className='p-1 items-center justify-center rounded-sm bg-green-200'>
-                                                        <p>{opc.optionName}</p>
+                                        {p.product_snapshot?.optionsSelected?.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 text-xs">
+                                                {p.product_snapshot.optionsSelected.map((opc, i) => (
+                                                    <div
+                                                        key={i}
+                                                        className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-md"
+                                                    >
+                                                        <span className="font-medium">
+                                                            {opc.variantName}:
+                                                        </span>
+                                                        <span className="text-gray-600">
+                                                            {opc.optionName}
+                                                        </span>
+                                                        {opc.extraPrice > 0 && (
+                                                            <span className="text-green-700 font-semibold">
+                                                                +${opc.extraPrice}
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                </div>
-                                                <div>
-                                                    <p>${opc.extraPrice}</p>
-                                                </div>
+                                                ))}
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
-                                    <div className='flex gap-2'>
-                                        <p className=' flex-1 p-1 rounded-sm bg-white'>{p.notes || "Sin notas"}</p>
+                                    <div className="flex justify-between items-center text-xs text-gray-500">
+                                        <p className="italic">
+                                            {p.notes ? `Nota: ${p.notes}` : 'Sin notas'}
+                                        </p>
                                         <p>${p.subtotal}</p>
                                     </div>
                                 </div>
