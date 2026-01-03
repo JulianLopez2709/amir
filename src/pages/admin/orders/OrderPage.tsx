@@ -28,12 +28,23 @@ import {
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { STATUS_CONFIG } from '@/config/statusConfig'
+import OrderFilterTabs from '@/components/admin/order/OrderFilterTabs'
+
+export type OrderFilter = 'ALL' | 'pending' | 'in_progress' | 'completed';
+
+const ORDER_FILTERS: {
+  value: OrderFilter
+  label: string
+}[] = [
+    { value: 'ALL', label: 'Todas' },
+    { value: 'pending', label: 'Por confirmar' },
+    { value: 'in_progress', label: 'En proceso' },
+    { value: 'completed', label: 'Finalizadas' },
+  ]
 
 function OrderPage() {
   type OrderAction = 'confirm' | 'complete' | null;
   type PaymentMethod = 'cash' | 'card' | null;
-  type OrderFilter = 'ALL' | 'pending' | 'in_progress' | 'completed';
-
 
   const { company } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -125,6 +136,9 @@ function OrderPage() {
       toast.error("Error al actualizar el estado")
     }
   }
+
+
+
 
   const today = new Date().toLocaleDateString('es-CO', {
     weekday: 'long',
@@ -489,58 +503,56 @@ function OrderPage() {
               </Button>
             </Link>
           </div>
-          <div className='flex gap-2'>
-            <div
-              onClick={() => setOrderFilter('ALL')}
-              className={`p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center cursor-pointer
-              ${orderFilter === 'ALL' ? 'bg-green-800 text-white' : 'bg-white'}`}>
-              <p>Todos</p>
-            </div>
-
-            <div
-              onClick={() => setOrderFilter('pending')}
-              className={`p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center cursor-pointer *
-                ${orderFilter === 'pending' ? 'bg-green-800 text-white' : 'bg-white'}`}>
-              <p>Por confirmar</p>
-            </div>
-
-            <div
-              onClick={() => setOrderFilter('in_progress')}
-              className={`p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center cursor-pointer
-              ${orderFilter === 'in_progress' ? 'bg-green-800 text-white' : 'bg-white'} `} >
-              <p>En proceso</p>
-            </div>
-
-            <div
-              onClick={() => setOrderFilter('completed')}
-              className={`p-1 px-2 hover:bg-gray-200 rounded-sm shadow flex flex-col items-center cursor-pointer
-              ${orderFilter === 'completed' ? 'bg-green-800 text-white' : 'bg-white'}
-            `}>
-              <p>Finalizada</p>
-            </div>
+          <div className="w-full overflow-x-auto">
+            <OrderFilterTabs
+              value={orderFilter}
+              onChange={setOrderFilter}
+            />
           </div>
+
 
         </div>
       </div>
       {/*NOTA: ARREGLAR EL BACKEND PARA QUE ME DEVUELVA UN ORDEN ESPECIFICO SOLO HAY UNA VARIANTE 
       Y ESTA TIENE MUCHAS OPCIONES. */ }
       {/* lista de ordenes  */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-4 overflow-y-auto h-[80vh]">
-        {filteredOrders.map((orden, index) => (
-          <li key={index} className='list-none'>
-            <CardOrder
-              item={orden}
-              onClick={() => {
-                setSelectOrden(orden)
-                //setDetail(true);
-              }}
-              onConfirm={() => openOrderAction(orden, 'confirm')}
-              onComplete={() => openOrderAction(orden, 'complete')}
-              index={index + 1}
-              selectOrden={selectOrden}
-            />
-          </li>
-        ))}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 px-4 overflow-y-auto h-[80vh]">
+        {filteredOrders.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 mb-4">
+              <ShoppingBag className="h-7 w-7 text-gray-400" />
+            </div>
+
+            <h3 className="text-sm font-semibold text-gray-700">
+              No hay pedidos
+            </h3>
+
+            <p className="text-sm text-gray-500 mt-1 max-w-xs">
+              Los pedidos se mostrarán aquí.
+            </p>
+
+            {orderFilter === 'ALL' && (
+              <Link to="/admin/products?orden">
+                <button className="mt-5 inline-flex items-center rounded-md bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 transition">
+                  + Crear primer pedido
+                </button>
+              </Link>
+            )}
+          </div>
+        ) : (
+          filteredOrders.map((orden, index) => (
+            <li key={orden.id} className="list-none">
+              <CardOrder
+                item={orden}
+                onClick={() => setSelectOrden(orden)}
+                onConfirm={() => openOrderAction(orden, 'confirm')}
+                onComplete={() => openOrderAction(orden, 'complete')}
+                index={index + 1}
+                selectOrden={selectOrden}
+              />
+            </li>
+          ))
+        )}
       </div>
 
       {/* Barra inferior fija en móvil */}

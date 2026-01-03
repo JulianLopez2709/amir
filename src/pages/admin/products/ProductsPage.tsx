@@ -295,7 +295,7 @@ function ProductsPage() {
                             )}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] ">
+                        <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] px-1">
                             {filteredProducts.map((product, index) => (
                                 <li key={product.id} className="flex justify-center ">
                                     <CardProduct
