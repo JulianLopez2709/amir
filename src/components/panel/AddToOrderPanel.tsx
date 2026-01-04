@@ -14,7 +14,6 @@ interface Props {
   orderId: string;
 }
 const mapOrderToProductsAdded = (order: Order): ProductToOrder[] => {
-  console.log("Mapping order to productsAdded", order);
   return order.products.map((op) => ({
     id: op.id, // 👈 FUNDAMENTAL PARA UPDATE
     product: {
@@ -75,7 +74,6 @@ function AddToOrderPanel({ productsAdded, setProductsAdded, orderId }: Props) {
       const order = await getOrderById(orderId);
       setOrder(order);
       const mapped = mapOrderToProductsAdded(order);
-      console.log("mapped order to productsAdded", mapped);
       setProductsAdded(mapped);
     } catch {
       toast.error("No se pudo cargar la orden");
@@ -88,21 +86,18 @@ function AddToOrderPanel({ productsAdded, setProductsAdded, orderId }: Props) {
       return;
     }
 
-    console.log("Updating order...", productsAdded);
-
     setIsLoading(true);
 
     const body: UpdateBody = {
       companyId: company!.id,
       detail: {
         metodo_pago: "Efectivo",
-        notas: "Orden actualizada desde el panel",
+        notas: order?.detail?.notas + " Orden actualizada desde el panel",
       },
       products: productsAdded.map(mapProductToBackend),
     };
 
     try {
-      console.log("Body to send:", body);
       await updateOrder(orderId, body);
       toast.success("Orden actualizada con éxito");
       setProductsAdded([]);
@@ -138,7 +133,6 @@ function AddToOrderPanel({ productsAdded, setProductsAdded, orderId }: Props) {
     <div>
       <div>
         <h2 className="font-bold text-2xl mb-4">Editar Orden</h2>
-        <p>{order?.status}</p>
       </div>
       <div className="flex flex-col h-full justify-between items-center">
         <div className="flex flex-col w-full mb-3">
@@ -154,7 +148,7 @@ function AddToOrderPanel({ productsAdded, setProductsAdded, orderId }: Props) {
                     onClick={() => handleDeleteProduct(index)}
                   />
 
-                  <div className="hidden sm:flex size-20 rounded-md overflow-hidden border-4 border-gray-400 bg-gray-100">
+                  <div className="flex size-14 rounded-md overflow-hidden border-3 border-gray-400 bg-gray-100 items-center justify-center">
                     {p.product.imgUrl ? (
                       <img
                         src={p.product.imgUrl}

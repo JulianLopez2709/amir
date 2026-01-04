@@ -61,7 +61,7 @@ export interface OrderProduct {
 export interface ProductOption {
   optionId: number
   variantId: number
-  extraPrice: number
+  extraPrice?: number
   optionName: string
   variantName: string
 }

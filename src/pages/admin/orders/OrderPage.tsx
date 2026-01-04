@@ -46,7 +46,7 @@ function OrderPage() {
   type OrderAction = 'confirm' | 'complete' | null;
   type PaymentMethod = 'cash' | 'card' | null;
 
-  const { company } = useAuth();
+  const { company, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -269,6 +269,27 @@ function OrderPage() {
     );
   }
 
+  // 🔹 Órdenes completadas (ganancia real)
+  const completedOrders = listOrder.filter(
+    order => order.status === 'completed'
+  )
+
+  const totalCompleted = completedOrders.reduce(
+    (acc, order) => acc + (order.total_price ?? 0),
+    0
+  )
+
+  // 🔹 Órdenes no canceladas (estimado)
+  const estimatedOrders = listOrder.filter(
+    order => order.status !== 'canceled'
+  )
+
+  const totalEstimated = estimatedOrders.reduce(
+    (acc, order) => acc + (order.total_price ?? 0),
+    0
+  )
+
+
   return (
     <div className='relative flex flex-col h-full w-full'>
       {/* Panel derecho - Lista de pedidos */}
@@ -355,7 +376,7 @@ function OrderPage() {
                             {prod.product_snapshot.optionsSelected.map((opt, i) => (
                               <li key={i}>
                                 • {opt.variantName}: {opt.optionName}
-                                {opt.extraPrice > 0 && (
+                                {opt.extraPrice && opt.extraPrice > 0 && (
                                   <span className="ml-1 text-green-700">
                                     (+${opt.extraPrice})
                                   </span>
@@ -423,7 +444,7 @@ function OrderPage() {
 
 
       {/* Dialog de gasto - encabezado*/}
-      <div className="px-2 md:px-4 pb-3 flex flex-col gap-3">
+      <div className="px-2 md:px-4 pb-3 flex flex-col gap-1">
 
         <div className="flex justify-between items-center">
           <h2 className="font-bold text-lg md:text-2xl">
@@ -432,7 +453,42 @@ function OrderPage() {
           <p className="capitalize text-sm text-gray-500">{today}</p>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
+          {/* ===== RESUMEN FINANCIERO COMPACTO ===== */}
+          {
+            company?.role === 'admin' && (
+              <div className="bg-white rounded-xl border shadow-sm px-3 py-2 flex items-center justify-between">
+
+                <div className="flex items-center justify-between gap-4 w-full">
+                  <CircleDollarSign className="h-8 w-8 text-green-600 opacity-80" />
+
+                  <div>
+                    <span className="text-xs">
+                      Total Vendido
+                    </span>
+                    <p className="text-xl font-bold text-gray-900">
+                      ${totalCompleted.toLocaleString('es-CO')}
+                    </p>
+                  </div>
+
+
+
+                  <div className="flex flex-col items-center text-green-600 text-sm font-medium">
+                    <div>
+                      <span>↑</span>
+                      <span>
+                        ${totalEstimated.toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                    <span className="text-gray-400 font-normal">
+                      Estimada
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+            )
+          }
 
           <div className='flex gap-2'>
             {/* --- DIALOG PARA AGREGAR GASTO --- */}

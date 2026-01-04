@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Button } from '../ui/button'
 import Product from "@/@types/Product";
-import { BoxesIcon, Edit3 } from 'lucide-react';
+import { BoxesIcon } from 'lucide-react';
 import { Separator } from '../ui/separator';
-import { ProductToOrder, SelectedVariant } from '@/@types/Order';
+import { ProductOption, ProductSnapshot, ProductToOrder, SelectedVariant } from '@/@types/Order';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -20,7 +20,6 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
 import { addedStock } from '@/api/product/StockProduct';
 
 
@@ -142,10 +141,39 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
 
 
 
+    const mapSelectedVariantsToProductOptions = (
+        selected: SelectedVariant[]
+    ): ProductOption[] => {
+        return selected.flatMap(variant =>
+            variant.options.map(option => ({
+                optionId: option.optionId,
+                variantId: 0!, // ⚠️ si no tienes el id, luego lo ajustamos
+                extraPrice: option.extraPrice,
+                optionName: option.name,
+                variantName: variant.variantName
+            }))
+        )
+    }
+
+
+    const mapProductToSnapshot = (product: Product): ProductSnapshot => {
+        return {
+            id: product.id!,
+            name: product.name,
+            price: product.price_selling,
+            price_selling: product.price_selling,
+            quantity: count,
+            img: product.imgUrl,
+            description: product.description,
+            imgUrl: product.imgUrl,
+            optionsSelected: mapSelectedVariantsToProductOptions(selectedOptions)
+        }
+    }
+
 
 
     return (
-        <div className="bg-white rounded-2xl flex flex-col h-auto w-full overflow-hidden" >
+        <div className="bg-white rounded-2xl flex flex-col h-fit w-full overflow-hidden border-2 border-gray-200 shadow" >
             <div className='h-full flex flex-col'>
 
                 <div className=" relative h-48  w-full bg-gray-100 flex items-center justify-center">
@@ -240,7 +268,7 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
                     {product.variants?.map((v) => (
                         <div className='md:flex gap-1 items-center'>
                             <p className='font-bold'>{v.name}</p>
-                            <div className='flex mb-1 gap-2'>
+                            <div className='flex flex-wrap mb-1 gap-2'>
 
                                 {v.options.map(opc => {
                                     const selected =
@@ -251,10 +279,8 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
                                         <div
                                             key={opc.id}
                                             className={`p-1 rounded-sm min-w-2.5 cursor-pointer
-                                            ${selected ? "bg-black text-white" : "bg-gray-400"}
-      `}
-                                            onClick={() => toggleOption(v, opc)}
-                                        >
+                                            ${selected ? "bg-black text-white" : "bg-gray-400"}`}
+                                            onClick={() => toggleOption(v, opc)}     >
                                             <p className="text-sm">
                                                 {opc.name}
                                                 {opc.extraPrice > 0 && ` (+${opc.extraPrice})`}
@@ -279,7 +305,7 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
                                 </div>
                                 <Button className="flex-2 cursor-pointer w-full" style={{ background: 'var(--primary-color)' }} variant="default" onClick={() =>
                                     addClick({
-                                        product,
+                                        product: mapProductToSnapshot(product),
                                         quantity: count,
                                         notes: undefined,
                                         selectedOptions

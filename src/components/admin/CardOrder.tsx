@@ -88,6 +88,17 @@ const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }:
                 </div>
             </div>
 
+            {item.detail?.notas && (
+                <div className="my-1 rounded-md bg-yellow-50 border border-yellow-200 px-3 py-2">
+                    <p className="text-xs font-semibold text-yellow-800 uppercase">
+                        Notas de la orden
+                    </p>
+                    <p className="text-sm text-yellow-900">
+                        {item.detail.notas}
+                    </p>
+                </div>
+            )}
+
             <div className='flex justify-between items-center'>
                 <p className=''>{formatDate(item.createAt)?.data}</p>
                 <p className=''>{formatDate(item.createAt)?.time}</p>
@@ -126,7 +137,7 @@ const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }:
                                                         <span className="text-gray-600">
                                                             {opc.optionName}
                                                         </span>
-                                                        {opc.extraPrice > 0 && (
+                                                        {opc.extraPrice && opc.extraPrice > 0 && (
                                                             <span className="text-green-700 font-semibold">
                                                                 +${opc.extraPrice}
                                                             </span>

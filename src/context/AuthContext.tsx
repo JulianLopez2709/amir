@@ -9,6 +9,7 @@ type Company = {
     type: string;
     primary_color: string;
     secondary_color: string;
+    available?: boolean;
 };
 
 type User = {
@@ -60,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     setPrimaryColor(companyParsed.primary_color || "#309b5c");
                     setSecondaryColor(companyParsed.secondary_color || "#309b5c");
                 } else {
-                    const firstAvailable = companiesData.find(c => c.available);
+                    const firstAvailable = companiesData.find((c: Company) => c.available);
                     if (firstAvailable) {
                         handleSetCompany(firstAvailable);
                     }

@@ -1,4 +1,4 @@
-import { ProductSnapshot, SelectedVariant } from "../domain/productsnapshot";
+import { ProductSnapshot, SelectedVariant } from "../domain/ProductSnapshot";
 
 
 export interface ProductToOrder {

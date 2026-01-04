@@ -304,6 +304,7 @@ function ProductsPage() {
                                         editClick={() => console.log(product)}
                                         addClick={(productToOrder) => {
                                             addNewProduct(productToOrder)
+                                            setModePanelRight('order')
                                             setShoppingCart(true)
                                         }}
                                     />
