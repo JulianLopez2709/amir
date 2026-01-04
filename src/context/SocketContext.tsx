@@ -31,7 +31,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
             socket.disconnect();
         }
 
-        const newSocket = io("http://localhost:3000", {
+        const newSocket = io("https://amirbackend-production.up.railway.app", {
             withCredentials: true,
         });
 
