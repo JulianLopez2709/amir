@@ -3,7 +3,7 @@ export default async function apiFetch<T>(
   options: RequestInit = {}
 ): Promise<T> {
 
-  const baseUrl = 'https://amirbackend-production.up.railway.app/'
+  const baseUrl = 'https://api.amincolombia.com/'
   const isFormData = options.body instanceof FormData
 
   const res = await fetch(`${baseUrl}${endpoint}`, {

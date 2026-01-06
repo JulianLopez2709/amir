@@ -32,7 +32,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         }
         const token = localStorage.getItem("ws_token");
         
-        const newSocket = io("https://amirbackend-production.up.railway.app", {
+        const newSocket = io("https://api.amincolombia.com", {
             auth: {
                 token, // 👈 AQUÍ
             },
