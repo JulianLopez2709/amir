@@ -18,6 +18,7 @@ interface LoginResponse {
         name: string;
     };
     companies: Company[];
+    token:string
 }
 
 export const login = async (identifier:string, password:string): Promise<LoginResponse>=> {

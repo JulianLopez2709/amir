@@ -27,6 +27,7 @@ function LoginPage() {
         // Guardamos los datos del usuario y compañías por separado
         localStorage.setItem("user", JSON.stringify(response.user));
         localStorage.setItem("companies", JSON.stringify(response.companies));
+        localStorage.setItem("ws_token", response.token);
         
         // Actualizamos el estado
         await Promise.all([

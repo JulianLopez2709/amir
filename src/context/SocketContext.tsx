@@ -30,9 +30,12 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         if (socket) {
             socket.disconnect();
         }
-
+        const token = localStorage.getItem("ws_token");
+        
         const newSocket = io("https://amirbackend-production.up.railway.app", {
-            withCredentials: true,
+            auth: {
+                token, // 👈 AQUÍ
+            },
         });
 
         newSocket.on("connect", () => {
