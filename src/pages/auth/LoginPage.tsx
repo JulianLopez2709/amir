@@ -62,6 +62,22 @@ function LoginPage() {
           <h2 className="pb-10 text-xl">Gana tiempo y administra tu empresa.</h2>
           <div className="w-full py-3">
             <label htmlFor="email">Nombre de usuario o correo electronico</label>
+            <Input 
+              className="py-5" 
+              type="text" 
+              id="email" 
+              placeholder="Ingrese email o username" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              disabled={isLoading}
+              required 
+            />
+          </div>
+          <div className="w-full py-3">
+            <div className="flex justify-between">
+              <label htmlFor="password">Password</label>
+              <p className="text-sm text-green-700 opacity-70">¿Olvidaste tu contraseña?</p>
+            </div>
             <div className="relative">
               <Input
                 className="py-5 pr-12"
@@ -82,22 +98,6 @@ function LoginPage() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-          </div>
-          <div className="w-full py-3">
-            <div className="flex justify-between">
-              <label htmlFor="password">Password</label>
-              <p className="text-sm text-green-700 opacity-70">¿Olvidaste tu contraseña?</p>
-            </div>
-            <Input 
-              className="py-5" 
-              type="password" 
-              id="password" 
-              placeholder="Ingrese Password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              disabled={isLoading}
-              required 
-            />
           </div>
           <Button 
             className="bg-green-700 w-full p-5" 
