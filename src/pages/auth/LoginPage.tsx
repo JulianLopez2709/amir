@@ -5,6 +5,7 @@ import inventariadoImg from '../../assets/inventariadoImg.webp'
 import { useState } from "react"
 import { login } from "@/api/auth/login"
 import { useAuth } from "@/context/AuthContext"
+import { Eye, EyeOff } from "lucide-react"
 
 function LoginPage() {
   const [email, setEmail] = useState("")
@@ -12,6 +13,7 @@ function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate();
   const { setUser, setCompany, setCompanies } = useAuth();
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -60,16 +62,26 @@ function LoginPage() {
           <h2 className="pb-10 text-xl">Gana tiempo y administra tu empresa.</h2>
           <div className="w-full py-3">
             <label htmlFor="email">Nombre de usuario o correo electronico</label>
-            <Input 
-              className="py-5" 
-              type="text" 
-              id="email" 
-              placeholder="Ingrese email o username" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              disabled={isLoading}
-              required 
-            />
+            <div className="relative">
+              <Input
+                className="py-5 pr-12"
+                type={showPassword ? "text" : "password"}
+                id="password"
+                placeholder="Ingrese Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                required
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}>
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
           <div className="w-full py-3">
             <div className="flex justify-between">
