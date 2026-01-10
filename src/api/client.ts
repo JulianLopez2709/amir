@@ -3,7 +3,7 @@ export default async function apiFetch<T>(
   options: RequestInit = {}
 ): Promise<T> {
 
-  const baseUrl = 'https://amirbackend-production.up.railway.app/'
+  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const isFormData = options.body instanceof FormData
 
   const res = await fetch(`${baseUrl}${endpoint}`, {

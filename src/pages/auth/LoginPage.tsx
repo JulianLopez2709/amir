@@ -15,6 +15,9 @@ function LoginPage() {
   const { setUser, setCompany, setCompanies } = useAuth();
   const [showPassword, setShowPassword] = useState(false)
 
+  console.log("API:", import.meta.env.VITE_API_URL)
+  console.log("WS:", import.meta.env.VITE_WS_URL)
+
   const handleLogin = async () => {
     if (!email || !password) {
       alert("Por favor ingrese email y contraseña");
@@ -24,13 +27,13 @@ function LoginPage() {
     setIsLoading(true);
     try {
       const response = await login(email, password);
-      
-      if (response && response.user) { 
+
+      if (response && response.user) {
         // Guardamos los datos del usuario y compañías por separado
         localStorage.setItem("user", JSON.stringify(response.user));
         localStorage.setItem("companies", JSON.stringify(response.companies));
         localStorage.setItem("ws_token", response.token);
-        
+
         // Actualizamos el estado
         await Promise.all([
           setUser(response.user),
@@ -57,59 +60,59 @@ function LoginPage() {
   return (
     <div className="h-screen md:flex">
       <div className="w-96 h-full m-auto flex flex-col items-center justify-center">
-          <h2 className="font-extrabold py-5 text-8xl text-green-700 ">Amin</h2>
-          <h1 className="font-bold text-3xl">Ingresa a tu cuenta</h1>
-          <h2 className="pb-10 text-xl">Gana tiempo y administra tu empresa.</h2>
-          <div className="w-full py-3">
-            <label htmlFor="email">Nombre de usuario o correo electronico</label>
-            <Input 
-              className="py-5" 
-              type="text" 
-              id="email" 
-              placeholder="Ingrese email o username" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              disabled={isLoading}
-              required 
-            />
-          </div>
-          <div className="w-full py-3">
-            <div className="flex justify-between">
-              <label htmlFor="password">Password</label>
-              <p className="text-sm text-green-700 opacity-70">¿Olvidaste tu contraseña?</p>
-            </div>
-            <div className="relative">
-              <Input
-                className="py-5 pr-12"
-                type={showPassword ? "text" : "password"}
-                id="password"
-                placeholder="Ingrese Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                required
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                tabIndex={-1}>
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-          </div>
-          <Button 
-            className="bg-green-700 w-full p-5" 
-            onClick={handleLogin} 
+        <h2 className="font-extrabold py-5 text-8xl text-green-700 ">Amin</h2>
+        <h1 className="font-bold text-3xl">Ingresa a tu cuenta</h1>
+        <h2 className="pb-10 text-xl">Gana tiempo y administra tu empresa.</h2>
+        <div className="w-full py-3">
+          <label htmlFor="email">Nombre de usuario o correo electronico</label>
+          <Input
+            className="py-5"
+            type="text"
+            id="email"
+            placeholder="Ingrese email o username"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
-          >
-            {isLoading ? 'Ingresando...' : 'Ingresar'}
-          </Button>
-          <p className="text-sm opacity-70">Ingresa como asesor o administrador</p>
-          <Link to="/">
-            <p className="opacity-70 text-green-700">¿Necesitas ayuda?</p>
-          </Link>
+            required
+          />
+        </div>
+        <div className="w-full py-3">
+          <div className="flex justify-between">
+            <label htmlFor="password">Password</label>
+            <p className="text-sm text-green-700 opacity-70">¿Olvidaste tu contraseña?</p>
+          </div>
+          <div className="relative">
+            <Input
+              className="py-5 pr-12"
+              type={showPassword ? "text" : "password"}
+              id="password"
+              placeholder="Ingrese Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              required
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              tabIndex={-1}>
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+        </div>
+        <Button
+          className="bg-green-700 w-full p-5"
+          onClick={handleLogin}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Ingresando...' : 'Ingresar'}
+        </Button>
+        <p className="text-sm opacity-70">Ingresa como asesor o administrador</p>
+        <Link to="/">
+          <p className="opacity-70 text-green-700">¿Necesitas ayuda?</p>
+        </Link>
       </div>
       <div className="h-full md:w-[50%] flex flex-col justify-between items-center rounded-tl-4xl relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-80% from-black to-transparent ">
