@@ -58,7 +58,6 @@ const mapOptionsToSelectedVariants = (
 
 
 function AddToOrderPanel({ productsAdded, setProductsAdded, orderId }: Props) {
-  console.log("lo que recibo ", productsAdded)
   const { company } = useAuth();
   const navigate = useNavigate()
   const [totalPrice, setTotalPrice] = useState(0);
@@ -127,6 +126,31 @@ function AddToOrderPanel({ productsAdded, setProductsAdded, orderId }: Props) {
   const handleDeleteProduct = (indexToDelete: number) => {
     setProductsAdded((prev) => prev.filter((_, index) => index !== indexToDelete));
   };
+
+  useEffect(() => {
+    const total = calculateTotal(productsAdded)
+    setTotalPrice(total)
+  }, [productsAdded])
+
+
+  const calculateTotal = (products: ProductToOrder[]) => {
+    return products.reduce((acc, p) => {
+      const basePrice = p.product.price_selling * p.quantity
+
+      const extras = p.selectedOptions.reduce((optAcc, variant) => {
+        return (
+          optAcc +
+          variant.options.reduce(
+            (vAcc, o) => vAcc + (o.extraPrice ?? 0),
+            0
+          ) * p.quantity
+        )
+      }, 0)
+
+      return acc + basePrice + extras
+    }, 0)
+  }
+
 
 
   return (

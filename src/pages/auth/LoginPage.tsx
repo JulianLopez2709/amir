@@ -15,9 +15,6 @@ function LoginPage() {
   const { setUser, setCompany, setCompanies } = useAuth();
   const [showPassword, setShowPassword] = useState(false)
 
-  console.log("API:", import.meta.env.VITE_API_URL)
-  console.log("WS:", import.meta.env.VITE_WS_URL)
-
   const handleLogin = async () => {
     if (!email || !password) {
       alert("Por favor ingrese email y contraseña");
