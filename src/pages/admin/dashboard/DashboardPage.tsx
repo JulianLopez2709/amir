@@ -16,8 +16,8 @@ function DashboardPage() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const data = await getDashboardSummary(company!.id)
-        setSummary(data)
+        //const data = await getDashboardSummary(company!.id)
+        setSummary(null)
       } catch (error) {
         console.error("Error cargando dashboard", error)
       } finally {

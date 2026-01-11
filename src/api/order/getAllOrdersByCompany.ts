@@ -1,41 +1,55 @@
 import { CreateOrderBody, OrdenReques, Order, ProductToOrder, UpdateBody } from "@/@types/Order"
 import apiFetch from "../client"
 
-export const getAllOrdersByCompany = async (companyId:number) => {
-    const response = await apiFetch<OrdenReques>(`order/company/${companyId}`)
-    if (!response) {
-        throw new Error('No response from server')
-    }
+export const getAllOrdersByCompany = async (
+  companyId: number,
+  params?: {
+    startDate?: string
+    endDate?: string
+    status?: string
+    page?: number
+    limit?: number
+  }
+) => {
+  const query = new URLSearchParams(params as any).toString()
+
+  const response = await apiFetch<OrdenReques>(
+    `order/company/${companyId}${query ? `?${query}` : ''}`
+  )
   
-    return response
+  if (!response) {
+    throw new Error('No response from server')
+  }
+
+  return response
 }
 
 
 
-export const createOrderByCompany = async (dataBody : CreateOrderBody) => {
-   
-    const response = await apiFetch<CreateOrderBody>(`order/`, {
-        method: 'POST',
-        body: JSON.stringify(dataBody),
-    })
-    if (!response) {
-        throw new Error('No response from server')
-    }
- 
-    return response
+export const createOrderByCompany = async (dataBody: CreateOrderBody) => {
+
+  const response = await apiFetch<CreateOrderBody>(`order/`, {
+    method: 'POST',
+    body: JSON.stringify(dataBody),
+  })
+  if (!response) {
+    throw new Error('No response from server')
+  }
+
+  return response
 }
 
 
-export const getOrderById = async (id : string) => {
-   
-    const response = await apiFetch<Order>(`order/${id}`, {
-        method: 'GET',
-    })
-    if (!response) {
-        throw new Error('No response from server')
-    }
- 
-    return response
+export const getOrderById = async (id: string) => {
+
+  const response = await apiFetch<Order>(`order/${id}`, {
+    method: 'GET',
+  })
+  if (!response) {
+    throw new Error('No response from server')
+  }
+
+  return response
 }
 
 

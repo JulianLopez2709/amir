@@ -4,7 +4,7 @@ import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
-import { BoxesIcon, CircleDollarSign, CreditCard, Printer, RefreshCcw, ShoppingBag, X } from 'lucide-react'
+import { BoxesIcon, CalendarIcon, CircleDollarSign, CreditCard, Printer, RefreshCcw, ShoppingBag, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSocket } from "@/context/SocketContext"
 import { Link } from 'react-router-dom'
@@ -29,6 +29,20 @@ import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { STATUS_CONFIG } from '@/config/statusConfig'
 import OrderFilterTabs from '@/components/admin/order/OrderFilterTabs'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 export type OrderFilter = 'ALL' | 'pending' | 'in_progress' | 'completed';
 
@@ -65,6 +79,14 @@ function OrderPage() {
   const [newExpense, setNewExpense] = useState({ price: '', description: '' });
   const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
 
+  const todayDate = new Date()
+  const [selectedDate, setSelectedDate] = useState<Date>(todayDate)
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false)
+
+  const [page, setPage] = useState(1)
+  const [limit] = useState(9) // 6 o 9 queda perfecto en grid
+  const [totalPages, setTotalPages] = useState(1)
+
   /*const shouldShowButtons =
     selectOrden?.data[0].status !== 'completed' &&
     selectOrden?.status !== 'canceled' &&
@@ -73,72 +95,6 @@ function OrderPage() {
     if (orderFilter === 'ALL') return true;
     return order.status === orderFilter;
   });
-
-
-  const handleExpenseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewExpense(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleExpenseSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newExpense.price || !newExpense.description) {
-      toast.error("Por favor, complete todos los campos del gasto.");
-      return;
-    }
-    setIsSubmittingExpense(true);
-    try {
-      // Aquí iría la llamada a la API para crear el gasto
-      // await createExpenseApi({ ...newExpense, price: Number(newExpense.price) });
-      console.log("Enviando gasto:", newExpense);
-      toast.success("Gasto agregado exitosamente");
-
-      // Resetear y cerrar el dialog
-      setNewExpense({ price: '', description: '' });
-      setIsExpenseDialogOpen(false);
-    } catch (error) {
-      toast.error("Error al agregar el gasto.");
-    } finally {
-      setIsSubmittingExpense(false);
-    }
-  };
-
-  const handleFinishOrder = async () => {
-    if (!selectOrden) {
-      toast.error("No se ha seleccionado ninguna orden.");
-      return;
-    }
-
-    if (!paymentMethod) {
-      toast.error("Por favor, seleccione un método de pago.");
-      return;
-    }
-
-    try {
-      await updateOrderStatus(selectOrden.id, 'completed'/*, paymentMethod*/);
-      toast.success("Orden finalizada exitosamente.");
-      fetchData(); // Volver a cargar los datos para reflejar el cambio
-    } catch (error) {
-      console.error('Error al finalizar la orden:', error);
-      toast.error("Error al finalizar la orden. Intente de nuevo.");
-    }
-  };
-
-  async function changeOrderStatus(
-    order: Order,
-    newStatus: 'completed' | 'canceled' | 'expense' | 'pending' | 'in_progress'
-  ) {
-    try {
-      await updateOrderStatus(order.id, newStatus)
-      toast.success(`Orden actualizada a ${STATUS_CONFIG[newStatus].text}`)
-      fetchData()
-    } catch (error) {
-      toast.error("Error al actualizar el estado")
-    }
-  }
-
-
-
 
   const today = new Date().toLocaleDateString('es-CO', {
     weekday: 'long',
@@ -177,8 +133,6 @@ function OrderPage() {
     if (!socket) return;
 
     const handleStatusChanged = ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
-      console.log("📦 Estado de orden actualizado:", orderId, status);
-
       // 1️⃣ Actualizar lista
       setListOrder(prev =>
         prev.map(order =>
@@ -206,7 +160,7 @@ function OrderPage() {
     setSelectOrden(null);
   }, [company?.id]);
 
-  async function fetchData() {
+  async function fetchData(newPage = page) {
     setIsLoading(true);
     setError(null);
 
@@ -215,8 +169,10 @@ function OrderPage() {
         setListOrder([]);
         return;
       }
-      const response = await getAllOrdersByCompany(company.id);
+      const response = await getAllOrdersByCompany(company.id, {page:newPage});
       setListOrder(response.data);
+      setTotalPages(response.totalPages)
+      setPage(response.page)
       //setSelectOrden(response[0])
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar las órdenes';
@@ -558,6 +514,39 @@ function OrderPage() {
                 + Nuevo Pedido
               </Button>
             </Link>
+
+            {/*company?.role === 'admin' && (
+              <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    {selectedDate
+                      ? selectedDate.toLocaleDateString('es-CO')
+                      : 'Filtrar por fecha'}
+                  </Button>
+                </PopoverTrigger>
+
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      if (!date) return
+
+                      // 1️⃣ guardar fecha
+                      setSelectedDate(date)
+
+                      // 2️⃣ cerrar popover
+                      setIsDatePopoverOpen(false)
+
+                      // 3️⃣ pedir datos al backend
+                      fetchData(date)
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            )*/}
+
           </div>
           <div className="w-full overflow-x-auto">
             <OrderFilterTabs
@@ -611,6 +600,44 @@ function OrderPage() {
         )}
       </div>
 
+      {totalPages > 1 && (
+        <div className="flex justify-center py-4">
+          <Pagination>
+            <PaginationContent>
+
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => page > 1 && fetchData(page - 1)}
+                  className={page === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const pageNumber = i + 1
+                return (
+                  <PaginationItem key={pageNumber}>
+                    <PaginationLink
+                      isActive={page === pageNumber}
+                      onClick={() => fetchData(pageNumber)}
+                    >
+                      {pageNumber}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              })}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => page < totalPages && fetchData(page + 1)}
+                  className={page === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+
       {/* Barra inferior fija en móvil */}
       {/*selectOrden && (
           <div className="lg:hidden fixed bottom-0 right-0  bg-white border-t shadow-lg">
@@ -636,5 +663,10 @@ function OrderPage() {
     </div>
   )
 }
+
+function formatDateToYYYYMMDD(date: Date) {
+  return date.toLocaleDateString('en-CA') // YYYY-MM-DD
+}
+
 
 export default OrderPage

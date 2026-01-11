@@ -32,7 +32,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         }
         const token = localStorage.getItem("ws_token");
         
-        const newSocket = io("https://api.amincolombia.com", {
+        const newSocket = io(import.meta.env.VITE_WS_URL || "http://localhost:3000", {
             auth: {
                 token, // 👈 AQUÍ
             },
