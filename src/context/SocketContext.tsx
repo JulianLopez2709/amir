@@ -31,11 +31,15 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
             socket.disconnect();
         }
         const token = localStorage.getItem("ws_token");
-        
+
         const newSocket = io(import.meta.env.VITE_WS_URL || "http://localhost:3000", {
             auth: {
                 token, // 👈 AQUÍ
             },
+            reconnectionAttempts: 5,
+            reconnectionDelay: 2000,
+            timeout: 10000,
+
         });
 
         newSocket.on("connect", () => {
