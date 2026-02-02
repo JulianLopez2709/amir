@@ -8,7 +8,7 @@ export interface DashboardSummary {
     totalOrdenesHoy: number
     ordenesFinalizadasHoy: number
     ordenesEnProceso: { cantidad: number, ordenes: [
-        {id:number}
+        {id:number, total_price:number, createAt: string}
     ] }
 }
 
