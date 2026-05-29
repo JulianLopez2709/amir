@@ -1,14 +1,13 @@
 import { createProduct } from '@/api/product/getAllProductByCompany'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
-import { ImageIcon, PlusCircle, ScanBarcode, XCircle } from 'lucide-react'
-import { isValidElement, useState } from 'react'
+import { ImageIcon, PlusCircle, ScanBarcode } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { Switch } from '../ui/switch'
 import Product from '@/@types/Product'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { ScrollArea } from '../ui/scroll-area'
-import { CreateProductPayload } from '@/@types/order/api/CreateProduct'
 import {
     Dialog,
     DialogContent,
@@ -23,6 +22,9 @@ const initialProductState = (companyId: number): Product => ({
     description: undefined,
     price_selling: 0,
     price_cost: 0,
+    price_before_tax: 0,
+    iva_percent: 19,
+    icui_percent: 0,
     barcode: undefined,
     companyId: companyId,
     avaliable: true,
@@ -62,18 +64,48 @@ function CreateProductPanel() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [variants, setVariants] = useState<Variant[]>([])
     const [openConfirm, setOpenConfirm] = useState(false)
+    const [ivaPercent, setIvaPercent] = useState(19)
+    const [icuiPercent, setIcuiPercent] = useState(0)
 
     const [attributes, setAttributes] = useState<Attribute[]>([{ key: '', value: '' }]);
+
+    useEffect(() => {
+        setProduct(prev => ({
+            ...prev,
+            price_before_tax: calculateBasePrice(
+                Number(prev.price_selling || 0),
+                ivaPercent,
+                icuiPercent
+            ),
+        }))
+    }, [ivaPercent, icuiPercent])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         // Lista de los campos que deben ser numéricos
         const numericFields = ['price_selling', 'price_cost', 'stock', 'stock_minimo'];
         if (numericFields.includes(name)) {
-            // Si el valor está vacío, guardamos 'undefined'.
-            // Si no, lo convertimos a número.
+
             const numValue = value === '' ? undefined : parseFloat(value);
-            setProduct(prev => ({ ...prev, [name]: numValue }));
+
+            setProduct(prev => {
+                const updated = {
+                    ...prev,
+                    [name]: numValue
+                };
+
+                // calcular automáticamente
+                if (name === 'price_selling') {
+                    updated.price_before_tax = calculateBasePrice(
+                        numValue || 0,
+                        ivaPercent,
+                        icuiPercent
+                    )
+                }
+
+                return updated;
+            });
+
         } else {
             setProduct(prev => ({ ...prev, [name]: value }));
         }
@@ -150,6 +182,9 @@ function CreateProductPanel() {
             if (product.barcode) formData.append("barcode", String(product.barcode))
             formData.append("price_cost", String(product.price_cost))
             formData.append("price_selling", String(product.price_selling))
+            formData.append("price_before_tax", String(product.price_before_tax))
+            formData.append("iva_percent", String(ivaPercent))
+            formData.append("icui_percent", String(icuiPercent))
             formData.append("stock", String(product.stock_minimo))
             formData.append("available", "true")
 
@@ -203,6 +238,23 @@ function CreateProductPanel() {
             setImageFile(file)
             setPreviewUrl(URL.createObjectURL(file))
         }
+    }
+
+    const calculateBasePrice = (
+        finalPrice: number,
+        iva: number,
+        icui: number,
+        inc: number = 0
+    ) => {
+
+        const totalTaxPercent =
+            iva + icui + inc
+
+        const basePrice =
+            finalPrice /
+            (1 + totalTaxPercent / 100)
+
+        return Number(basePrice.toFixed(2))
     }
 
     /*const handleSubmit = async (e: React.FormEvent) => {
@@ -292,7 +344,7 @@ function CreateProductPanel() {
                     <h2 className="text-lg md:text-xl font-semibold tracking-tight">
                         Crear producto
                     </h2>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                         Completa la información para agregar un nuevo producto a tu inventario.
                     </p>
                 </div>
@@ -389,14 +441,30 @@ function CreateProductPanel() {
 
                     </div>
 
-                    <div className='flex w-full gap-2'>
-                        <div className='w-full'>
-                            <label htmlFor="price_cost" className='text-sm font-medium'>Pricio Costo</label>
-                            <Input name='price_cost' placeholder="$0" value={product.price_cost} onChange={handleChange} type="number" className='' required />
+                    <div className='flex flex-col gap-2'>
+                        <div className='flex w-full gap-2'>
+                            <div className='w-full'>
+                                <label htmlFor="price_cost" className='text-sm font-medium'>Precio Costo</label>
+                                <Input name='price_cost' placeholder="$0" value={product.price_cost} onChange={handleChange} type="number" className='' required />
+                            </div>
+                            <div className='w-full'>
+                                <label htmlFor="price_selling" className='text-sm font-medium'>Precio Venta</label>
+                                <Input name='price_selling' placeholder="$0" value={product.price_selling} onChange={handleChange} type="number" className='' required />
+                            </div>
                         </div>
-                        <div className='w-full'>
-                            <label htmlFor="price_selling" className='text-sm font-medium'>Pricio Venta</label>
-                            <Input name='price_selling' placeholder="$0" value={product.price_selling} onChange={handleChange} type="number" className='' required />
+                        <div className='flex w-full gap-2'>
+                            <div className='w-full'>
+                                <label htmlFor="taxes" className='text-sm font-medium'>IVA (%)</label>
+                                <Input type="number" value={ivaPercent} onChange={(e) => setIvaPercent(Number(e.target.value))} />
+                            </div>
+                            <div className='w-full'>
+                                <label htmlFor="taxes_icui" className='text-sm font-medium'>ICUI (%)</label>
+                                <Input type="number" value={icuiPercent} onChange={(e) => setIcuiPercent(Number(e.target.value))} />
+                            </div>
+                            <div className='w-full'>
+                                <label htmlFor="price_before_tax" className='text-sm font-medium'>Precio antes de IVA</label>
+                                <Input name='price_before_tax' placeholder="$0" value={calculateBasePrice(product.price_selling, ivaPercent, icuiPercent)} type="number" className='' disabled />
+                            </div>
                         </div>
                     </div>
                     <div>

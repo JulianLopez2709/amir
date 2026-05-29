@@ -4,7 +4,7 @@ import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
-import { BoxesIcon, CalendarIcon, CircleDollarSign, CreditCard, Printer, RefreshCcw, ShoppingBag, X } from 'lucide-react'
+import { RefreshCcw, ShoppingBag } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSocket } from "@/context/SocketContext"
 import { Link } from 'react-router-dom'
@@ -18,17 +18,22 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 import { toast } from 'sonner'
-import { Input } from '@/components/ui/input'
 import { STATUS_CONFIG } from '@/config/statusConfig'
 import OrderFilterTabs from '@/components/admin/order/OrderFilterTabs'
+import OrderCheckoutSheet, {
+  type FactusCustomerForm,
+  type FactusPaymentForm,
+  type SheetStep,
+  type SubmitPhase,
+} from '@/components/admin/order/OrderCheckoutSheet'
+import { validateFactusBill } from '@/api/factus/validateBill'
+import {
+  buildFactusCustomerPayload,
+  getEmitterInfo,
+  getNumberingRangeId,
+  validateCustomFiscalForm,
+} from '@/lib/factus/buildCustomer'
 import {
   Popover,
   PopoverContent,
@@ -45,6 +50,49 @@ import {
 } from "@/components/ui/pagination"
 
 export type OrderFilter = 'ALL' | 'pending' | 'in_progress' | 'completed';
+
+const IDENTIFICATION_DOCUMENT_OPTIONS = [
+  { value: '11', label: 'Registro civil' },
+  { value: '12', label: 'Tarjeta de identidad' },
+  { value: '13', label: 'CC' },
+  { value: '21', label: 'Tarjeta de extranjería' },
+  { value: '22', label: 'Cédula de extranjería' },
+  { value: '31', label: 'NIT' },
+  { value: '41', label: 'Pasaporte' },
+  { value: '42', label: 'Documento de identificación extranjero' },
+  { value: '47', label: 'PEP' },
+  { value: '48', label: 'PPT' },
+  { value: '50', label: 'NIT otro país' },
+  { value: '91', label: 'NUIP' },
+]
+
+const LEGAL_ORGANIZATION_OPTIONS = [
+  { value: '1', label: 'Persona Jurídica' },
+  { value: '2', label: 'Persona Natural' },
+]
+
+const TRIBUTE_OPTIONS = [
+  { value: '01', label: 'IVA' },
+  { value: 'ZZ', label: 'No aplica' },
+]
+
+const PAYMENT_METHOD_OPTIONS = [
+  { value: '10', label: 'Efectivo' },
+  { value: '42', label: 'Consignación' },
+  { value: '20', label: 'Cheque' },
+  { value: '47', label: 'Transferencia' },
+  { value: '71', label: 'Bonos' },
+  { value: '72', label: 'Vales' },
+  { value: '1', label: 'No definido' },
+  { value: '49', label: 'Tarjeta Débito' },
+  { value: '48', label: 'Tarjeta Crédito' },
+  { value: 'ZZZ', label: 'Otro' },
+]
+
+const PAYMENT_FORM_OPTIONS = [
+  { value: '1', label: 'Contado' },
+  { value: '2', label: 'Crédito' },
+]
 
 const ORDER_FILTERS: {
   value: OrderFilter
@@ -73,6 +121,32 @@ function OrderPage() {
   const { socket } = useSocket()
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+
+  const [sheetStep, setSheetStep] = useState<SheetStep>(1)
+  const [submitPhase, setSubmitPhase] = useState<SubmitPhase>('idle')
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [factusCustomer, setFactusCustomer] = useState<FactusCustomerForm>({
+    identification_document_code: '13',
+    identification: '',
+    company: '',
+    names: '',
+    trade_name: '',
+    address: '',
+    email: '',
+    phone: '',
+    legal_organization_code: '2',
+    tribute_code: 'ZZ',
+    municipality_code: '',
+    municipality_country: 'CO',
+  })
+  const [generateElectronicInvoice, setGenerateElectronicInvoice] = useState(false)
+  const [factusPayment, setFactusPayment] = useState<FactusPaymentForm>({
+    payment_form: '1',
+    payment_method_code: '10',
+    due_date: formatDateToYYYYMMDD(new Date()),
+    send_email: true,
+    observation: '',
+  })
 
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
@@ -169,7 +243,7 @@ function OrderPage() {
         setListOrder([]);
         return;
       }
-      const response = await getAllOrdersByCompany(company.id, {page:newPage});
+      const response = await getAllOrdersByCompany(company.id, { page: newPage });
       setListOrder(response.data);
       setTotalPages(response.totalPages)
       setPage(response.page)
@@ -187,18 +261,297 @@ function OrderPage() {
     }
   }
 
+  const resetFactusForms = () => {
+    setFactusCustomer({
+      identification_document_code: '13',
+      identification: '',
+      company: '',
+      names: '',
+      trade_name: '',
+      address: '',
+      email: '',
+      phone: '',
+      legal_organization_code: '2',
+      tribute_code: 'ZZ',
+      municipality_code: '',
+      municipality_country: 'CO',
+    })
+    setFactusPayment({
+      payment_form: '1',
+      payment_method_code: '10',
+      due_date: formatDateToYYYYMMDD(new Date()),
+      send_email: true,
+      observation: '',
+    })
+    setGenerateElectronicInvoice(company?.hasBilling ?? false)
+  }
+
   const closeSheet = () => {
     setIsSheetOpen(false);
     setPendingAction(null);
     setPaymentMethod(null);
+    setSheetStep(1);
+    setSubmitPhase('idle');
+    setSubmitError(null);
+    resetFactusForms();
   };
+
+  const isLegalOrganization = factusCustomer.legal_organization_code === '1'
+
+  const buildFactusItems = (
+    products: OrderProduct[] = []
+  ) => {
+    return products.map((prod) => {
+
+      const snapshot = prod.product_snapshot
+
+      const quantity = Number(prod.quantity || 1)
+
+      const ivaPercent = Number(
+        snapshot?.iva_percent || 0
+      )
+
+      const icuiPercent = Number(
+        snapshot?.icui_percent || 0
+      )
+
+      const incPercent = Number(
+        snapshot?.inc_percent || 0
+      )
+
+      const priceBeforeTax = Number(
+        snapshot?.price_before_tax ||
+        snapshot?.price_selling ||
+        0
+      )
+
+      const taxes = []
+
+      // IVA
+      if (ivaPercent > 0) {
+        taxes.push({
+          code: '01',
+          rate: ivaPercent.toFixed(2),
+        })
+      }
+
+      // INC
+      if (incPercent > 0) {
+        taxes.push({
+          code: '04',
+          rate: incPercent.toFixed(2),
+        })
+      }
+
+      // ICUI
+      if (icuiPercent > 0) {
+        taxes.push({
+          code: '35',
+          rate: icuiPercent.toFixed(2),
+        })
+      }
+
+      if (taxes.length === 0) {
+        taxes.push({
+          is_excluded: true,
+        })
+      }
+
+      return {
+        code_reference: String(
+          snapshot?.id || `PROD-${prod.id}`
+        ),
+
+        name: snapshot?.name || 'Producto',
+
+        quantity: quantity.toFixed(2),
+
+        discount_rate: '0.00',
+
+        // 🔥 PRECIO BASE SIN IMPUESTOS
+        price: priceBeforeTax.toFixed(2),
+
+        unit_measure_code: '94',
+
+        standard_code: '999',
+
+        taxes,
+      }
+    })
+  }
+
+  const validateBillingStep = () => {
+    if (!generateElectronicInvoice) return true
+    const fiscalError = validateCustomFiscalForm(factusCustomer)
+    if (fiscalError) {
+      toast.error(fiscalError)
+      return false
+    }
+    return true
+  }
+
+  const buildFactusPayload = () => {
+    if (!selectOrden || !company?.id) return null
+
+    const companyRecord = company as Record<string, unknown>
+    const numberingRangeId = getNumberingRangeId(companyRecord)
+    const emitter = getEmitterInfo(companyRecord, user?.email)
+    const customerPayload = buildFactusCustomerPayload(factusCustomer, emitter)
+    const customerEmail = customerPayload.email?.trim()
+
+    const items = buildFactusItems(selectOrden.products)
+
+    const factusCalculatedTotal = calculateFactusTotal(items)
+
+    const orderTotal = Number(selectOrden.total_price || 0)
+
+    const rounding = Number((orderTotal - factusCalculatedTotal).toFixed(2))
+
+    return {
+      companyId: company.id,
+      reference_code: `ORDER-${selectOrden.id.split('-')[0]}`,
+      document: '01',
+      ...(numberingRangeId > 0 ? { numbering_range_id: numberingRangeId } : {}),
+      operation_type: '10',
+      send_email: factusPayment.send_email && Boolean(customerEmail),
+      payment_details: [
+        {
+          payment_form: Number(factusPayment.payment_form),
+          payment_method_code: factusPayment.payment_method_code,
+          reference_code: `pago-${selectOrden.id.split('-')[0]}`,
+          amount: orderTotal.toFixed(2),
+          due_date: factusPayment.due_date,
+        },
+      ],
+      cash_rounding_amount: rounding.toFixed(2),
+      observation: factusPayment.observation || `Factura generada para pedido ${selectOrden.id}`,
+      customer: customerPayload,
+      items: buildFactusItems(selectOrden.products),
+    }
+  }
+
+  const calculateFactusTotal = (items: any[]) => {
+
+    let total = 0
+
+    for (const item of items) {
+
+      const quantity = Number(item.quantity || 0)
+
+      const basePrice = Number(item.price || 0)
+
+      // subtotal SIN impuestos
+      const subtotal = Number(
+        (quantity * basePrice).toFixed(2)
+      )
+
+      let taxesTotal = 0
+
+      for (const tax of item.taxes || []) {
+
+        // excluir productos sin impuestos
+        if (tax.is_excluded) continue
+
+        const rate = Number(tax.rate || 0)
+
+        const taxValue = Number(
+          (
+            subtotal *
+            (rate / 100)
+          ).toFixed(2)
+        )
+
+        taxesTotal += taxValue
+      }
+
+      total += subtotal + taxesTotal
+    }
+
+    return Number(total.toFixed(2))
+  }
+
+  const runSheetSubmission = async () => {
+    if (!selectOrden) return
+
+    setSubmitPhase('processing')
+    setSubmitError(null)
+
+    try {
+      if (pendingAction === 'complete') {
+        let factusBillNumber: string | undefined
+        if (company?.hasBilling && generateElectronicInvoice) {
+          const payload = buildFactusPayload()
+          if (!payload) throw new Error('No se pudo construir la factura')
+          const response = await validateFactusBill(payload)
+          const billNumber = response?.data?.number ?? response?.number
+          if (billNumber != null && billNumber !== '') {
+            factusBillNumber = String(billNumber)
+          }
+        }
+        await updateOrderStatus(selectOrden.id, 'completed', factusBillNumber)
+        setListOrder((prev) =>
+          prev.map((order) =>
+            order.id === selectOrden.id
+              ? { ...order, status: 'completed', factusBillNumber: factusBillNumber ?? order.number }
+              : order
+          )
+        )
+        toast.success(
+          factusBillNumber
+            ? 'Orden finalizada y factura generada'
+            : 'Orden finalizada'
+        )
+        fetchData()
+      } else if (pendingAction === 'confirm') {
+        await updateOrderStatus(selectOrden.id, 'in_progress')
+        toast.success('Orden confirmada')
+      }
+      setSubmitPhase('success')
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'No fue posible completar el proceso'
+      setSubmitError(errorMessage)
+      setSubmitPhase('error')
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleGoToStep2 = () => {
+    if (!factusPayment.payment_method_code) {
+      toast.error('Selecciona un método de pago')
+      return
+    }
+    setSheetStep(2)
+  }
+
+  const handleGoToStep3 = () => {
+    if (
+      pendingAction === 'complete' &&
+      generateElectronicInvoice &&
+      !company?.hasBilling
+    ) {
+      toast.error('Configura las credenciales de Factus en Ajustes')
+      return
+    }
+    if (!validateBillingStep()) return
+    setSheetStep(3)
+    void runSheetSubmission()
+  }
 
   const openOrderAction = (order: Order, action: OrderAction) => {
     setSelectOrden(order);
     setPendingAction(action);
+    setSheetStep(1);
+    setSubmitPhase('idle');
+    setSubmitError(null);
+    setGenerateElectronicInvoice(company?.hasBilling ?? false);
     setIsSheetOpen(true);
   };
 
+  const handleRetrySubmit = () => {
+    setSubmitPhase('idle')
+    setSubmitError(null)
+    void runSheetSubmission()
+  }
 
   if (isLoading) {
     return (
@@ -228,154 +581,37 @@ function OrderPage() {
   return (
     <div className='relative flex flex-col h-full w-full'>
       {/* Panel derecho - Lista de pedidos */}
-      <Sheet
+      <OrderCheckoutSheet
         open={isSheetOpen}
         onOpenChange={(open) => {
           if (!open) closeSheet()
         }}
-      >
-        <SheetContent
-          side="right"
-          className="w-[400px] sm:w-[460px] flex flex-col gap-6 px-1 py-3"
-        >
+        order={selectOrden}
+        pendingAction={pendingAction}
+        sheetStep={sheetStep}
+        setSheetStep={setSheetStep}
+        submitPhase={submitPhase}
+        submitError={submitError}
+        customer={factusCustomer}
+        setCustomer={setFactusCustomer}
+        payment={factusPayment}
+        setPayment={setFactusPayment}
+        identificationOptions={IDENTIFICATION_DOCUMENT_OPTIONS}
+        legalOrganizationOptions={LEGAL_ORGANIZATION_OPTIONS}
+        tributeOptions={TRIBUTE_OPTIONS}
+        paymentMethodOptions={PAYMENT_METHOD_OPTIONS}
+        paymentFormOptions={PAYMENT_FORM_OPTIONS}
+        isLegalOrganization={isLegalOrganization}
+        isHasBilling={company?.hasBilling ?? false}
+        generateElectronicInvoice={generateElectronicInvoice}
+        setGenerateElectronicInvoice={setGenerateElectronicInvoice}
+        onContinueStep1={handleGoToStep2}
+        onContinueStep2={handleGoToStep3}
+        onRetrySubmit={handleRetrySubmit}
+        onClose={closeSheet}
+        onFinish={closeSheet}
+      />
 
-          {/* ===== HEADER ===== */}
-          <SheetHeader className="border-b pb-4">
-            {selectOrden && (
-              <div className="flex items-center justify-between">
-                <SheetTitle className="text-lg font-bold">
-                  Pedido #{selectOrden.id.split('-')[0]}
-                </SheetTitle>
-
-                <div>{selectOrden.status}</div>
-              </div>
-            )}
-
-            <SheetDescription className="text-sm text-gray-500">
-              {pendingAction === 'confirm'
-                ? 'Confirma la orden para iniciar su preparación'
-                : 'Finaliza la orden una vez entregada'}
-            </SheetDescription>
-          </SheetHeader>
-
-          {/* ===== CONTENIDO ===== */}
-          <div className="flex-1 flex flex-col gap-6 overflow-y-auto">
-
-            {/* ===== RESUMEN ===== */}
-            {selectOrden && (
-              <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-lg">
-                <div>
-                  <p className="text-gray-500">Fecha</p>
-                  <p className="font-medium">
-                    {new Date(selectOrden.createAt).toLocaleString('es-CO')}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500">Total</p>
-                  <p className="font-bold text-green-700">
-                    ${selectOrden.total_price?.toLocaleString()}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500">Productos</p>
-                  <p className="font-medium">
-                    {selectOrden.products?.length || 0}
-                  </p>
-                </div>
-
-              </div>
-            )}
-
-            {/* ===== PRODUCTOS ===== */}
-            {selectOrden?.products && (
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm text-gray-700">
-                  Productos
-                </h4>
-
-                <div className="space-y-2 max-h-[260px] overflow-y-auto pr-2">
-                  {selectOrden.products.map((prod: OrderProduct, idx: number) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-start border rounded-md p-3 text-sm"
-                    >
-                      <div className="flex flex-col gap-1">
-                        <p className="font-medium">
-                          {prod.product_snapshot?.name || 'Producto'}
-                        </p>
-
-                        {prod.product_snapshot?.optionsSelected?.length > 0 && (
-                          <ul className="text-xs text-gray-500">
-                            {prod.product_snapshot.optionsSelected.map((opt, i) => (
-                              <li key={i}>
-                                • {opt.variantName}: {opt.optionName}
-                                {opt.extraPrice && opt.extraPrice > 0 && (
-                                  <span className="ml-1 text-green-700">
-                                    (+${opt.extraPrice})
-                                  </span>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-
-                        {prod.notes && (
-                          <p className="text-xs text-gray-400">
-                            Nota: {prod.notes}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="text-right font-bold">
-                        x{prod.quantity}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* ===== ACCIONES ===== */}
-          <div className="space-y-3 border-t pt-4">
-
-            {/* CONFIRMAR */}
-            {pendingAction === 'confirm' && (
-              <Button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={async () => {
-                  await updateOrderStatus(selectOrden!.id, 'in_progress')
-                  closeSheet()
-                }}
-              >
-                Confirmar Orden
-              </Button>
-            )}
-
-            {/* FINALIZAR */}
-            {pendingAction === 'complete' && (
-              <Button
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                onClick={async () => {
-                  await updateOrderStatus(selectOrden!.id, 'completed')
-                  toast.success("Orden finalizada")
-                  closeSheet()
-                  fetchData()
-                }}
-              >
-                Finalizar Orden
-              </Button>
-            )}
-
-            <Button variant="outline" onClick={closeSheet}>
-              Cancelar
-            </Button>
-          </div>
-
-        </SheetContent>
-      </Sheet>
 
 
       {/* Dialog de gasto - encabezado*/}

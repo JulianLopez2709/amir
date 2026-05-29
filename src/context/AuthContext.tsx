@@ -10,6 +10,11 @@ type Company = {
     primary_color: string;
     secondary_color: string;
     available?: boolean;
+    email?: string;
+    address?: string;
+    numbering_range_id?: number;
+    factus_numbering_range_id?: number;
+    hasBilling?: boolean;
 };
 
 type User = {

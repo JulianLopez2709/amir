@@ -1,6 +1,5 @@
 import Product from "@/@types/Product"
 import apiFetch from "../client"
-import { CreateProductPayload } from "@/@types/order/api/CreateProduct"
 
 
 export const getAllProductByCompany = async (companyId: number) => {
@@ -13,7 +12,6 @@ export const getAllProductByCompany = async (companyId: number) => {
 }
 
 export const createProduct = async ( formData: FormData) => {
-    console.log("formData", formData)
     const response = await apiFetch<any>(`product/`, {
         method: 'POST',
         body: formData,
@@ -22,5 +20,17 @@ export const createProduct = async ( formData: FormData) => {
         throw new Error('No response from server')
     }
  
+    return response
+}
+
+export const updateProduct = async (productId: string, formData: FormData) => {
+    const response = await apiFetch<any>(`product/${productId}`, {
+        method: 'PATCH',
+        body: formData,
+    })
+    if (!response) {
+        throw new Error('No response from server')
+    }
+
     return response
 }
