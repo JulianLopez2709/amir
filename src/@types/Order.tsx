@@ -17,6 +17,7 @@ export interface Order {
   createAt: string
   updatedAt: string
   companyId: number
+  number?: string | null
   detail?: OrderDetail
   products: OrderProduct[]
 }
@@ -46,6 +47,10 @@ export interface OrderProduct {
   notes: string,
   product_snapshot: {
     id: string
+    price_before_tax: number
+    iva_percent: number
+    icui_percent: number
+    inc_percent: number
     price_selling: number
     quantity?: number
     img?: string

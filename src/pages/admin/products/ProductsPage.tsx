@@ -7,7 +7,8 @@ import { useEffect, useState } from "react";
 import Product from "@/@types/Product";
 import { getAllProductByCompany } from "@/api/product/getAllProductByCompany";
 import RightPanel from "@/components/admin/RightPanel";
-import { newProductToOrder, Order, OrderProduct, ProductToOrder, SelectedVariant } from "@/@types/Order";
+import EditProductSheet from "@/components/admin/EditProductSheet";
+import { ProductToOrder, SelectedVariant } from "@/@types/Order";
 import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext"
 import { getOrderById } from "@/api/order/getAllOrdersByCompany";
@@ -26,6 +27,7 @@ function ProductsPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [listProduct, setListProduct] = useState<Product[]>([])
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+    const [productToEdit, setProductToEdit] = useState<Product | null>(null)
     const { company } = useAuth();
     const { socket } = useSocket()
 
@@ -221,6 +223,10 @@ function ProductsPage() {
 
     }
 
+    const totalProductsAdded = listProductsAdded.reduce(
+        (acc, item) => acc + (item.quantity || 0),
+        0
+    )
 
 
 
@@ -249,8 +255,16 @@ function ProductsPage() {
 
     return (
         <div className="relative grid lg:grid-cols-[1fr_0.5fr] h-full ">
+            <EditProductSheet
+                product={productToEdit}
+                open={Boolean(productToEdit)}
+                onOpenChange={(open: boolean) => {
+                    if (!open) setProductToEdit(null)
+                }}
+                onSaved={handle}
+            />
 
-            <div className="md:p-3">
+            <div className="md:p-3 p-1">
                 <div className="flex justify-between items-center gap-5 mb-2">
                     <div className="relative flex-1">
                         <Input
@@ -266,13 +280,20 @@ function ProductsPage() {
                             <Button className="border border-green-700 bg-white text-green-700 cursor-pointer" variant="outline" onClick={newProductClick}>+ Nuevo Producto</Button>
                         ) : (null)
                     }
-                    <Button className={`lg:hidden bg-yellow-700 cursor-pointer`} onClick={showDetail}><ShoppingCart className="h-10 w-10 text-white" /></Button>
+                    <Button className={`lg:hidden relative bg-yellow-700 cursor-pointer`} onClick={showDetail}>
+                        <ShoppingCart className="h-10 w-10 text-white" />
+                        {totalProductsAdded > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                                {totalProductsAdded > 99 ? '99+' : totalProductsAdded}
+                            </span>
+                        )}
+                    </Button>
                 </div>
 
                 { /*component cards*/}
                 <div className="h-full">
                     {filteredProducts.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
+                        <div className="flex flex-col items-center justify-center h-full gap-4">
                             <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center">
                                 <ShoppingCart className="w-16 h-16 text-gray-400" />
                             </div>
@@ -296,15 +317,13 @@ function ProductsPage() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto max-h-[90vh] md:max-h-[85vh] px-1">
-                            {filteredProducts.map((product, index) => (
+                            {filteredProducts.map((product) => (
                                 <li key={product.id} className="flex justify-center ">
                                     <CardProduct
                                         product={product}
-                                        index={index}
-                                        editClick={() => console.log(product)}
+                                        editClick={() => setProductToEdit(product)}
                                         addClick={(productToOrder) => {
                                             addNewProduct(productToOrder)
-                                            setShoppingCart(true)
                                         }}
                                     />
 

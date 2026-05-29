@@ -1,8 +1,10 @@
 import Status from './Status'
 import { Button } from '../ui/button'
 import { OrdenReques, Order } from '@/@types/Order'
-import { BoxesIcon } from 'lucide-react'
+import { BoxesIcon, FileText, Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { downloadFactusBillPdf } from '@/api/factus/downloadBillPdf'
+import { toast } from 'sonner'
 import { STATUS_CONFIG } from '@/config/statusConfig'
 import { formatDate } from '@/config/utils'
 import { ScrollArea } from '../ui/scroll-area'
@@ -28,12 +30,28 @@ interface CardOrderProps {
 const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }: CardOrderProps) => {
     const navigate = useNavigate()
 
-    const { user } = useAuth()
+    const { user, company } = useAuth()
 
     const statusInfo = STATUS_CONFIG[item.status.toUpperCase()] || STATUS_CONFIG.DEFAULT;
 
-
     const [orderToCancel, setOrderToCancel] = useState<Order | null>(null)
+    const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false)
+    const billNumber = item.number?.trim()
+
+    const handleViewInvoice = async (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (!billNumber || !company?.id) return
+
+        setIsDownloadingInvoice(true)
+        try {
+            await downloadFactusBillPdf(billNumber, company.id)
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Error al abrir la factura'
+            toast.error(message)
+        } finally {
+            setIsDownloadingInvoice(false)
+        }
+    }
 
 
 
@@ -83,8 +101,30 @@ const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }:
                         <p className=''>Pedido #{item.id.split("-")[0]}</p>
                     </div>
                 </div>
-                <div>
-                    <Status bg={statusInfo.tailwindClasses.bg} textColor={statusInfo.tailwindClasses.text} color={statusInfo.color} name={statusInfo.text} />
+                <div className="flex items-center gap-2 shrink-0">
+                    {billNumber && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5 border-green-200 text-green-800 hover:bg-green-50"
+                            disabled={isDownloadingInvoice || !company?.id}
+                            onClick={handleViewInvoice}
+                            title={`Factura ${billNumber}`}
+                        >
+                            {isDownloadingInvoice ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                                <FileText className="h-3.5 w-3.5" />
+                            )}
+                        </Button>
+                    )}
+                    <Status
+                        bg={statusInfo.tailwindClasses.bg}
+                        textColor={statusInfo.tailwindClasses.text}
+                        color={statusInfo.color}
+                        name={statusInfo.text}
+                    />
                 </div>
             </div>
 
@@ -147,8 +187,8 @@ const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }:
                                             </div>
                                         )}
                                     </div>
-                                    <div className="flex justify-between items-center text-xs text-gray-500">
-                                        <p className="italic">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <p className="italic font-bold">
                                             {p.notes ? `Nota: ${p.notes}` : 'Sin notas'}
                                         </p>
                                         <p>${p.subtotal}</p>
@@ -184,6 +224,17 @@ const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }:
                                     <p className='font-bold'>Cancelar</p>
                                 </div>
                             </Button>
+
+                            <Button
+                                variant="outline"
+                                className="flex-1 h-auto"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    navigate(`/admin/products?orden=${item.id}`)
+                                }}
+                            >
+                                <p className="font-bold">Editar</p>
+                            </Button>
                             {
                                 item.status == "pending" ? (
                                     <Button variant="outline" className='flex-1 h-auto bg-yellow-500 text-white'
@@ -200,19 +251,6 @@ const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }:
                                     </Button>
                                 ) : (
                                     <div className='flex flex-col sm:flex-row gap-1 w-full'>
-
-
-                                        <Button
-                                            variant="outline"
-                                            className="flex-1 h-auto"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                navigate(`/admin/products?orden=${item.id}`)
-                                            }}
-                                        >
-                                            <p className="font-bold">Editar</p>
-                                        </Button>
-
                                         <Button variant="default" className='flex-2 bg-green-500 text-white h-full'
                                             onClick={(e) => {
                                                 e.stopPropagation()

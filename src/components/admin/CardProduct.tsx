@@ -21,19 +21,24 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { addedStock } from '@/api/product/StockProduct';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 
 
 type CardProductProps = {
     product: Product;
     addClick: (product: ProductToOrder) => void;
     editClick: () => void;
-    index: number
 }
 
 
-function CardProduct({ product, addClick, editClick, index }: CardProductProps) {
+function CardProduct({ product, addClick, editClick }: CardProductProps) {
     const [count, setCount] = useState(1)
     const [selectedOptions, setSelectedOptions] = useState<SelectedVariant[]>([])
+    const [expandedVariants, setExpandedVariants] = useState<Record<string, boolean>>({})
 
     const generateId = (id: string) => {
         const newId = String(id).split("-")[0]
@@ -72,6 +77,11 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
             console.error("❌ Error ajustando stock:", error);
         }
     };
+
+    const MAX_VISIBLE_OPTIONS = 6
+
+    const getVariantKey = (variantName: string, variantId?: number) =>
+        `${variantId ?? variantName}-${variantName}`
 
 
     const toggleOption = (variant: any, option: any) => {
@@ -265,35 +275,100 @@ function CardProduct({ product, addClick, editClick, index }: CardProductProps) 
                         }
                     </div>
                     <Separator className='mb-1' />
-                    {product.variants?.map((v) => (
-                        <div className='md:flex gap-1 items-center'>
-                            <p className='font-bold'>{v.name}</p>
-                            <div className='flex flex-wrap mb-1 gap-2'>
+                    <div className="space-y-2 ">
+                        {product.variants?.map((v) => {
+                            const variantKey = getVariantKey(v.name, v.id)
 
-                                {v.options.map(opc => {
-                                    const selected =
-                                        selectedOptions
-                                            .find(sv => sv.variantName === v.name)
-                                            ?.options.some(o => o.optionId === opc.id) || false
-                                    return (
-                                        <div
-                                            key={opc.id}
-                                            className={`p-1 rounded-sm min-w-2.5 cursor-pointer
-                                            ${selected ? "bg-black text-white" : "bg-gray-400"}`}
-                                            onClick={() => toggleOption(v, opc)}     >
-                                            <p className="text-sm">
-                                                {opc.name}
-                                                {opc.extraPrice > 0 && ` (+${opc.extraPrice})`}
-                                            </p>
+                            const selectedVariant =
+                                selectedOptions.find(
+                                    sv => sv.variantName === v.name
+                                )
+
+                            return (
+                                <Collapsible
+                                    key={variantKey}
+                                    className="border rounded-lg overflow-hidden bg-gray-50"
+                                >
+                                    <CollapsibleTrigger className="w-full">
+                                        <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-100 transition">
+
+                                            {/* LEFT */}
+                                            <div className="text-left">
+                                                <p className="font-semibold text-sm">
+                                                    {v.name}
+                                                </p>
+
+                                                <p className="text-xs text-gray-500">
+                                                    {selectedVariant?.options?.length
+                                                        ? selectedVariant.options
+                                                            .map(o => o.name)
+                                                            .join(", ")
+                                                        : "Seleccionar opción"}
+                                                </p>
+                                            </div>
+
+                                            {/* RIGHT */}
+                                            <div className="text-xs">
+                                                {v.options.length} opciones
+                                            </div>
+
                                         </div>
-                                    )
-                                })}
+                                    </CollapsibleTrigger>
 
-                            </div>
-                        </div>
+                                    <CollapsibleContent>
+                                        <div className="p-3 border-t bg-white">
 
+                                            <div className="flex flex-wrap gap-2">
 
-                    ))}
+                                                {v.options.map((opc) => {
+
+                                                    const selected =
+                                                        selectedOptions
+                                                            .find(
+                                                                sv => sv.variantName === v.name
+                                                            )
+                                                            ?.options.some(
+                                                                o => o.optionId === opc.id
+                                                            ) || false
+
+                                                    return (
+                                                        <button
+                                                            key={opc.id}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                toggleOption(v, opc)
+                                                            }
+                                                            className={`
+                      px-3 py-2 rounded-xl border text-sm transition-all
+                      ${selected
+                                                                    ? "bg-black text-white border-black shadow-sm"
+                                                                    : "bg-white hover:bg-gray-100 border-gray-200"
+                                                                }
+                    `}
+                                                        >
+                                                            <div className="flex items-center gap-1">
+
+                                                                <span>
+                                                                    {opc.name}
+                                                                </span>
+
+                                                                {opc.extraPrice > 0 && (
+                                                                    <span className="text-xs opacity-70">
+                                                                        +${opc.extraPrice}
+                                                                    </span>
+                                                                )}
+
+                                                            </div>
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            )
+                        })}
+                    </div>
 
                     {
                         product.manage_stock != undefined /*&& /*product..quantity > 0*/ ? (

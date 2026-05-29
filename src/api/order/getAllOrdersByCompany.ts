@@ -56,10 +56,10 @@ export const getOrderById = async (id: string) => {
 export const updateOrderStatus = async (
   orderId: string,
   status: 'completed' | 'canceled' | 'expense' | 'pending' | 'in_progress',
+  factusBillNumber?: string,
   //paymentMethod?: 'cash' | 'card'
 ) => {
-  const body = { status /*, paymentMethod*/ };
-  console.log(orderId, status)
+  const body = { status, factusBillNumber };
   const response = await apiFetch<OrdenReques>(`order/${orderId}/status`, {
     method: 'PATCH',
     body: JSON.stringify(body),

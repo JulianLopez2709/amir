@@ -13,8 +13,15 @@ export const useChangeCompany = () => {
             throw new Error("Company not found in context");
         }
 
-        // 🔥 ACTUALIZA EL ESTADO GLOBAL
-        setCompany(company);
+        const apiCompany =
+            response?.company ??
+            response?.activeCompany ??
+            (typeof response === "object" && response !== null && "id" in response ? response : null);
+
+        setCompany({
+            ...company,
+            ...(apiCompany && typeof apiCompany === "object" ? apiCompany : {}),
+        });
 
         return response;
     };
