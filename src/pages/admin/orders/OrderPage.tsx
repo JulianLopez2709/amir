@@ -4,8 +4,16 @@ import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
-import { RefreshCcw, ShoppingBag } from 'lucide-react'
+import { CalendarDays, ChevronDown, RefreshCcw, ShoppingBag } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { DateRange } from 'react-day-picker'
+import {
+  formatOperationalDateRangeLabel,
+  operationalDaysInclusive,
+  parseOperationalDate,
+  subtractOperationalDays,
+  toOperationalDateString,
+} from '@/lib/operationalDate'
 import { useSocket } from "@/context/SocketContext"
 import { Link } from 'react-router-dom'
 import {
@@ -50,6 +58,20 @@ import {
 } from "@/components/ui/pagination"
 
 export type OrderFilter = 'ALL' | 'pending' | 'in_progress' | 'completed';
+
+const MAX_DATE_RANGE_DAYS = 31
+
+type DatePreset =
+  | { label: 'Hoy'; type: 'today' }
+  | { label: string; type: 'offset'; startOffset: number; endOffset: number }
+
+const DATE_PRESETS: DatePreset[] = [
+  { label: 'Hoy', type: 'today' },
+  { label: 'Ayer', type: 'offset', startOffset: 1, endOffset: 1 },
+  { label: 'Últimos 7 días', type: 'offset', startOffset: 7, endOffset: 0 },
+  { label: 'Últimos 15 días', type: 'offset', startOffset: 15, endOffset: 0 },
+  { label: 'Últimos 30 días', type: 'offset', startOffset: 30, endOffset: 0 },
+]
 
 const IDENTIFICATION_DOCUMENT_OPTIONS = [
   { value: '11', label: 'Registro civil' },
@@ -153,8 +175,10 @@ function OrderPage() {
   const [newExpense, setNewExpense] = useState({ price: '', description: '' });
   const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
 
-  const todayDate = new Date()
-  const [selectedDate, setSelectedDate] = useState<Date>(todayDate)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [dateFilterLabel, setDateFilterLabel] = useState('Hoy')
+  const [queryDates, setQueryDates] = useState<{ startDate?: string; endDate?: string }>({})
+  const [operationalToday, setOperationalToday] = useState<string | undefined>()
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false)
 
   const [page, setPage] = useState(1)
@@ -169,14 +193,6 @@ function OrderPage() {
     if (orderFilter === 'ALL') return true;
     return order.status === orderFilter;
   });
-
-  const today = new Date().toLocaleDateString('es-CO', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
-
 
   useEffect(() => {
     if (!socket) return;
@@ -230,11 +246,30 @@ function OrderPage() {
   }, [socket]);
 
   useEffect(() => {
-    fetchData();
-    setSelectOrden(null);
-  }, [company?.id]);
+    setDateFilterLabel('Hoy')
+    setDateRange(undefined)
+    setQueryDates({})
+    setOperationalToday(undefined)
+    setPage(1)
+    setSelectOrden(null)
+    void fetchData(1, {})
+  }, [company?.id])
 
-  async function fetchData(newPage = page) {
+  useEffect(() => {
+    if (!operationalToday || queryDates.startDate) return
+    setDateRange({
+      from: parseOperationalDate(operationalToday),
+      to: parseOperationalDate(operationalToday),
+    })
+  }, [operationalToday, queryDates.startDate])
+
+  async function fetchData(
+    newPage = 1,
+    filters?: {
+      startDate?: string
+      endDate?: string
+    }
+  ) {
     setIsLoading(true);
     setError(null);
 
@@ -243,22 +278,83 @@ function OrderPage() {
         setListOrder([]);
         return;
       }
-      const response = await getAllOrdersByCompany(company.id, { page: newPage });
+
+      const startDate = filters !== undefined ? filters.startDate : queryDates.startDate
+      const endDate = filters !== undefined ? filters.endDate : queryDates.endDate
+
+      const response = await getAllOrdersByCompany(company.id, {
+        page: newPage,
+        limit,
+        startDate,
+        endDate,
+      });
       setListOrder(response.data);
       setTotalPages(response.totalPages)
       setPage(response.page)
-      //setSelectOrden(response[0])
+
+      if (response.operationalDate) {
+        setOperationalToday(response.operationalDate)
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar las órdenes';
       setError(errorMessage);
-      /*toast({
-        variant: "destructive",
-        title: "Error",
-        description: errorMessage,
-      });*/
     } finally {
       setIsLoading(false);
     }
+  }
+
+  const applyDateFilter = (label: string, startDate: string, endDate: string) => {
+    setDateFilterLabel(label)
+    setDateRange({
+      from: parseOperationalDate(startDate),
+      to: parseOperationalDate(endDate),
+    })
+    setQueryDates({ startDate, endDate })
+    setIsDatePopoverOpen(false)
+    void fetchData(1, { startDate, endDate })
+  }
+
+  const getReferenceOperationalDate = () => queryDates.endDate ?? operationalToday
+
+  const handlePresetSelect = (preset: DatePreset) => {
+    if (preset.type === 'today') {
+      setDateFilterLabel('Hoy')
+      setDateRange(undefined)
+      setQueryDates({})
+      setIsDatePopoverOpen(false)
+      void fetchData(1, {})
+      return
+    }
+
+    const referenceDate = getReferenceOperationalDate()
+    if (!referenceDate) {
+      toast.error('No se pudo determinar el día operativo actual. Intenta de nuevo.')
+      return
+    }
+
+    const startDate = subtractOperationalDays(referenceDate, preset.startOffset)
+    const endDate = subtractOperationalDays(referenceDate, preset.endOffset)
+    applyDateFilter(preset.label, startDate, endDate)
+  }
+
+  const handleCalendarSelect = (range: DateRange | undefined) => {
+    setDateRange(range)
+
+    if (!range?.from || !range?.to) return
+
+    const startDate = toOperationalDateString(range.from)
+    const endDate = toOperationalDateString(range.to)
+
+    if (operationalDaysInclusive(startDate, endDate) > MAX_DATE_RANGE_DAYS) {
+      toast.error(`El rango máximo permitido es de ${MAX_DATE_RANGE_DAYS} días`)
+      return
+    }
+
+    applyDateFilter(
+      formatOperationalDateRangeLabel(startDate, endDate),
+      startDate,
+      endDate
+    )
   }
 
   const resetFactusForms = () => {
@@ -501,7 +597,7 @@ function OrderPage() {
             ? 'Orden finalizada y factura generada'
             : 'Orden finalizada'
         )
-        fetchData()
+        fetchData(page)
       } else if (pendingAction === 'confirm') {
         await updateOrderStatus(selectOrden.id, 'in_progress')
         toast.success('Orden confirmada')
@@ -615,16 +711,42 @@ function OrderPage() {
 
 
       {/* Dialog de gasto - encabezado*/}
-      <div className="px-2 md:px-4 pb-3 flex flex-col gap-1">
+      <div className="px-2 pt-2 md:px-4 pb-3 flex flex-col gap-1">
 
         <div className="flex justify-between items-center">
-          <h2 className="font-bold text-lg md:text-2xl">
-            Lista de Pedidos
-          </h2>
-          <p className="capitalize text-sm text-gray-500">{today}</p>
-        </div>
+          <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" />
+                {dateFilterLabel}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <div className="flex flex-col sm:flex-row">
+                <div className="flex flex-col gap-1 p-3 border-b sm:border-b-0 sm:border-r min-w-[168px]">
+                  {DATE_PRESETS.map((preset) => (
+                    <Button
+                      key={preset.label}
+                      type="button"
+                      variant={dateFilterLabel === preset.label ? 'secondary' : 'ghost'}
+                      className="justify-start h-8 px-2 text-sm font-normal"
+                      onClick={() => handlePresetSelect(preset)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleCalendarSelect}
+                  numberOfMonths={1}
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
           <div className='flex gap-2'>
             {/* --- DIALOG PARA AGREGAR GASTO --- */}
             {/*
@@ -727,6 +849,10 @@ function OrderPage() {
             )*/}
 
           </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
+          
           <div className="w-full overflow-x-auto">
             <OrderFilterTabs
               value={orderFilter}
