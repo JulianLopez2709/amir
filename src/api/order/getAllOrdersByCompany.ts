@@ -11,7 +11,11 @@ export const getAllOrdersByCompany = async (
     limit?: number
   }
 ) => {
-  const query = new URLSearchParams(params as any).toString()
+  const query = new URLSearchParams(
+    Object.entries(params ?? {})
+      .filter(([, value]) => value !== undefined && value !== '')
+      .map(([key, value]) => [key, String(value)])
+  ).toString()
 
   const response = await apiFetch<OrdenReques>(
     `order/company/${companyId}${query ? `?${query}` : ''}`
