@@ -93,3 +93,19 @@ export const updateOrder = async (
 
   return response;
 };
+
+export const payOrderProducts = async (
+  orderId: string,
+  productIds?: number[]
+) => {
+  const response = await apiFetch<Order>(`order/${orderId}/pay`, {
+    method: 'PATCH',
+    body: JSON.stringify({ productIds }),
+  });
+
+  if (!response) {
+    throw new Error('No response from server');
+  }
+
+  return response;
+};

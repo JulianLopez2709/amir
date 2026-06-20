@@ -43,9 +43,11 @@ export interface OrderDetail {
   }
 }
 
+export type OrderProductStatus = 'pending' | 'served' | 'paid' | 'cancelled'
+
 export interface OrderProduct {
   id: number,
-  status: string,
+  status: OrderProductStatus | string,
   quantity: number,
   subtotal: number,
   notes: string,

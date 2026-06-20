@@ -1,5 +1,5 @@
 import { OrdenReques, Order, OrderProduct, OrderStatus } from '@/@types/Order'
-import { getAllOrdersByCompany, updateOrderStatus } from '@/api/order/getAllOrdersByCompany'
+import { getAllOrdersByCompany, payOrderProducts, updateOrderStatus } from '@/api/order/getAllOrdersByCompany'
 import CardOrder from '@/components/admin/CardOrder'
 import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
@@ -33,9 +33,11 @@ import OrderFilterTabs from '@/components/admin/order/OrderFilterTabs'
 import OrderCheckoutSheet, {
   type FactusCustomerForm,
   type FactusPaymentForm,
+  type OrderAction,
   type SheetStep,
   type SubmitPhase,
 } from '@/components/admin/order/OrderCheckoutSheet'
+import { getServedProductsToPay, canCloseOrder } from '@/lib/orderTotals'
 import { validateFactusBill } from '@/api/factus/validateBill'
 import {
   buildFactusCustomerPayload,
@@ -128,7 +130,6 @@ const ORDER_FILTERS: {
   ]
 
 function OrderPage() {
-  type OrderAction = 'confirm' | 'complete' | null;
   type PaymentMethod = 'cash' | 'card' | null;
 
   const { company, user } = useAuth();
@@ -524,23 +525,28 @@ function OrderPage() {
   const buildFactusPayload = () => {
     if (!selectOrden || !company?.id) return null
 
+    const productsForInvoice =
+      pendingAction === 'charge'
+        ? getServedProductsToPay(selectOrden.products)
+        : selectOrden.products
+
     const companyRecord = company as Record<string, unknown>
     const numberingRangeId = getNumberingRangeId(companyRecord)
     const emitter = getEmitterInfo(companyRecord, user?.email)
     const customerPayload = buildFactusCustomerPayload(factusCustomer, emitter)
     const customerEmail = customerPayload.email?.trim()
 
-    const items = buildFactusItems(selectOrden.products)
-
+    const items = buildFactusItems(productsForInvoice)
     const factusCalculatedTotal = calculateFactusTotal(items)
-
-    const orderTotal = Number(selectOrden.total_price || 0)
-
+    const orderTotal = productsForInvoice.reduce(
+      (sum, product) => sum + Number(product.subtotal || 0),
+      0
+    )
     const rounding = Number((orderTotal - factusCalculatedTotal).toFixed(2))
 
     return {
       companyId: company.id,
-      reference_code: `ORDER-${selectOrden.id.split('-')[0]}`,
+      reference_code: `ORDER-${selectOrden.id.split('-')[0]}-${Date.now()}`,
       document: '01',
       ...(numberingRangeId > 0 ? { numbering_range_id: numberingRangeId } : {}),
       operation_type: '10',
@@ -549,15 +555,19 @@ function OrderPage() {
         {
           payment_form: Number(factusPayment.payment_form),
           payment_method_code: factusPayment.payment_method_code,
-          reference_code: `pago-${selectOrden.id.split('-')[0]}`,
+          reference_code: `pago-${selectOrden.id.split('-')[0]}-${Date.now()}`,
           amount: orderTotal.toFixed(2),
           due_date: factusPayment.due_date,
         },
       ],
       cash_rounding_amount: rounding.toFixed(2),
-      observation: factusPayment.observation || `Factura generada para pedido ${selectOrden.id}`,
+      observation:
+        factusPayment.observation ||
+        (pendingAction === 'charge'
+          ? `Cobro parcial pedido ${selectOrden.id}`
+          : `Factura generada para pedido ${selectOrden.id}`),
       customer: customerPayload,
-      items: buildFactusItems(selectOrden.products),
+      items,
     }
   }
 
@@ -608,34 +618,32 @@ function OrderPage() {
     setSubmitError(null)
 
     try {
-      if (pendingAction === 'complete') {
-        let factusBillNumber: string | undefined
+      if (pendingAction === 'charge') {
+        const servedIds = getServedProductsToPay(selectOrden.products).map((p) => p.id)
+        if (servedIds.length === 0) {
+          throw new Error('No hay productos servidos pendientes de cobro')
+        }
+
         if (company?.hasBilling && generateElectronicInvoice) {
           const payload = buildFactusPayload()
           if (!payload) throw new Error('No se pudo construir la factura')
-          const response = await validateFactusBill(payload)
-          const billNumber = response?.data?.number ?? response?.number
-          if (billNumber != null && billNumber !== '') {
-            factusBillNumber = String(billNumber)
-          }
+          await validateFactusBill(payload)
         }
-        await updateOrderStatus(selectOrden.id, 'completed', factusBillNumber)
-        setListOrder((prev) =>
-          prev.map((order) =>
-            order.id === selectOrden.id
-              ? { ...order, status: 'completed', factusBillNumber: factusBillNumber ?? order.number }
-              : order
-          )
-        )
-        toast.success(
-          factusBillNumber
-            ? 'Orden finalizada y factura generada'
-            : 'Orden finalizada'
-        )
-        fetchData(page)
+
+        await payOrderProducts(selectOrden.id, servedIds)
+        toast.success('Cobro registrado correctamente')
+        await fetchData(page)
+      } else if (pendingAction === 'close') {
+        if (!canCloseOrder(selectOrden.products)) {
+          throw new Error('Aún hay productos pendientes o servidos sin cobrar')
+        }
+        await updateOrderStatus(selectOrden.id, 'completed')
+        toast.success('Mesa cerrada correctamente')
+        await fetchData(page)
       } else if (pendingAction === 'confirm') {
         await updateOrderStatus(selectOrden.id, 'in_progress')
-        toast.success('Orden confirmada')
+        toast.success('Cuenta abierta')
+        await fetchData(page)
       }
       setSubmitPhase('success')
     } catch (err) {
@@ -646,20 +654,31 @@ function OrderPage() {
     }
   }
 
-  const handleGoToStep2 = () => {
-    if (!factusPayment.payment_method_code) {
-      toast.error('Selecciona un método de pago')
+  const handleGoToStep1 = () => {
+    if (pendingAction === 'confirm' || pendingAction === 'close') {
+      setSheetStep(3)
+      void runSheetSubmission()
       return
     }
-    setSheetStep(2)
+
+    if (pendingAction === 'charge') {
+      if (!factusPayment.payment_method_code) {
+        toast.error('Selecciona un método de pago')
+        return
+      }
+      if (!generateElectronicInvoice) {
+        setSheetStep(3)
+        void runSheetSubmission()
+        return
+      }
+      setSheetStep(2)
+    }
   }
 
   const handleGoToStep3 = () => {
-    if (
-      pendingAction === 'complete' &&
-      generateElectronicInvoice &&
-      !company?.hasBilling
-    ) {
+    if (pendingAction !== 'charge') return
+
+    if (generateElectronicInvoice && !company?.hasBilling) {
       toast.error('Configura las credenciales de Factus en Ajustes')
       return
     }
@@ -736,7 +755,7 @@ function OrderPage() {
         isHasBilling={company?.hasBilling ?? false}
         generateElectronicInvoice={generateElectronicInvoice}
         setGenerateElectronicInvoice={setGenerateElectronicInvoice}
-        onContinueStep1={handleGoToStep2}
+        onContinueStep1={handleGoToStep1}
         onContinueStep2={handleGoToStep3}
         onRetrySubmit={handleRetrySubmit}
         onClose={closeSheet}
@@ -931,7 +950,8 @@ function OrderPage() {
                 item={orden}
                 onClick={() => setSelectOrden(orden)}
                 onConfirm={() => openOrderAction(orden, 'confirm')}
-                onComplete={() => openOrderAction(orden, 'complete')}
+                onCharge={() => openOrderAction(orden, 'charge')}
+                onCloseTable={() => openOrderAction(orden, 'close')}
                 index={index + 1}
                 selectOrden={selectOrden}
               />

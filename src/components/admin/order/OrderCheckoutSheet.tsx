@@ -18,10 +18,16 @@ import {
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
 import { Check, ChevronLeft, Loader2 } from 'lucide-react'
+import OrderTotalsSummary from './OrderTotalsSummary'
+import {
+  formatCurrency,
+  getOrderTotals,
+  getServedProductsToPay,
+} from '@/lib/orderTotals'
 
 export type SheetStep = 1 | 2 | 3
 export type SubmitPhase = 'idle' | 'processing' | 'success' | 'error'
-export type OrderAction = 'confirm' | 'complete' | null
+export type OrderAction = 'confirm' | 'charge' | 'close' | null
 
 export type FactusCustomerForm = {
   identification_document_code: string
@@ -87,6 +93,19 @@ function getOptionLabel(options: SelectOption[], code: string) {
   return options.find((item) => item.value === code)?.label ?? code
 }
 
+function getSheetTitle(action: OrderAction) {
+  switch (action) {
+    case 'confirm':
+      return 'Confirmar pedido'
+    case 'charge':
+      return 'Cobrar consumo'
+    case 'close':
+      return 'Cerrar mesa'
+    default:
+      return 'Pedido'
+  }
+}
+
 export default function OrderCheckoutSheet({
   open,
   onOpenChange,
@@ -134,7 +153,7 @@ export default function OrderCheckoutSheet({
             )}
             <SheetHeader className="p-0 space-y-0 flex-1">
               <SheetTitle className="text-base font-bold text-left">
-                {pendingAction === 'confirm' ? 'Confirmar pedido' : 'Finalizar pedido'}
+                {getSheetTitle(pendingAction)}
                 {orderShortId && (
                   <span className="text-gray-500 font-normal"> #{orderShortId}</span>
                 )}
@@ -183,6 +202,7 @@ export default function OrderCheckoutSheet({
           {sheetStep === 1 && order && (
             <StepOrderReview
               order={order}
+              pendingAction={pendingAction}
               payment={payment}
               setPayment={setPayment}
               paymentMethodOptions={paymentMethodOptions}
@@ -190,7 +210,7 @@ export default function OrderCheckoutSheet({
             />
           )}
 
-          {sheetStep === 2 && (
+          {sheetStep === 2 && pendingAction === 'charge' && (
             <StepBillingForm
               pendingAction={pendingAction}
               customer={customer}
@@ -239,73 +259,106 @@ export default function OrderCheckoutSheet({
 
 function StepOrderReview({
   order,
+  pendingAction,
   payment,
   setPayment,
   paymentMethodOptions,
   paymentFormOptions,
 }: {
   order: Order
+  pendingAction: OrderAction
   payment: FactusPaymentForm
   setPayment: Dispatch<SetStateAction<FactusPaymentForm>>
   paymentMethodOptions: SelectOption[]
   paymentFormOptions: SelectOption[]
 }) {
+  const productsToShow =
+    pendingAction === 'charge' ? getServedProductsToPay(order.products) : order.products
+  const { pendiente } = getOrderTotals(order.products)
+
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border p-4 space-y-3 bg-white">
-        <h4 className="text-sm font-semibold text-gray-800">Método de pago</h4>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Forma de pago">
-            <Select
-              value={payment.payment_form}
-              onValueChange={(value) => setPayment((prev) => ({ ...prev, payment_form: value }))}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Seleccionar" />
-              </SelectTrigger>
-              <SelectContent>
-                {paymentFormOptions.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Método de pago">
-            <Select
-              value={payment.payment_method_code}
-              onValueChange={(value) =>
-                setPayment((prev) => ({ ...prev, payment_method_code: value }))
-              }
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Seleccionar" />
-              </SelectTrigger>
-              <SelectContent>
-                {paymentMethodOptions.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Fecha vencimiento" className="col-span-2">
-            <Input
-              type="date"
-              value={payment.due_date}
-              onChange={(e) => setPayment((prev) => ({ ...prev, due_date: e.target.value }))}
-              className="h-9"
-            />
-          </Field>
-        </div>
+      <div className="rounded-xl border p-4 bg-white">
+        <OrderTotalsSummary products={order.products} />
       </div>
 
+      {pendingAction === 'confirm' && (
+        <p className="text-sm text-gray-600">
+          Al confirmar, la cuenta quedará abierta y los productos pasarán a estado servido.
+        </p>
+      )}
+
+      {pendingAction === 'close' && (
+        <p className="text-sm text-gray-600">
+          Todos los productos están pagados o cancelados. Puedes cerrar la mesa.
+        </p>
+      )}
+
+      {pendingAction === 'charge' && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+          <p className="text-xs text-emerald-800 font-medium">Total a cobrar ahora</p>
+          <p className="text-2xl font-bold text-emerald-900">{formatCurrency(pendiente)}</p>
+        </div>
+      )}
+
+      {pendingAction === 'charge' && (
+        <div className="rounded-xl border p-4 space-y-3 bg-white">
+          <h4 className="text-sm font-semibold text-gray-800">Método de pago</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Forma de pago">
+              <Select
+                value={payment.payment_form}
+                onValueChange={(value) => setPayment((prev) => ({ ...prev, payment_form: value }))}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paymentFormOptions.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Método de pago">
+              <Select
+                value={payment.payment_method_code}
+                onValueChange={(value) =>
+                  setPayment((prev) => ({ ...prev, payment_method_code: value }))
+                }
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paymentMethodOptions.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Fecha vencimiento" className="col-span-2">
+              <Input
+                type="date"
+                value={payment.due_date}
+                onChange={(e) => setPayment((prev) => ({ ...prev, due_date: e.target.value }))}
+                className="h-9"
+              />
+            </Field>
+          </div>
+        </div>
+      )}
+
       <div>
-        <h4 className="text-sm font-semibold text-gray-800 mb-2">Productos</h4>
+        <h4 className="text-sm font-semibold text-gray-800 mb-2">
+          {pendingAction === 'charge' ? 'Productos a cobrar' : 'Productos'}
+        </h4>
         <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
-          {order.products?.map((prod: OrderProduct, idx: number) => (
+          {productsToShow?.map((prod: OrderProduct, idx: number) => (
             <div
               key={idx}
               className="flex justify-between gap-2 border rounded-lg p-3 text-sm bg-white"
@@ -346,8 +399,12 @@ function StepOrderReview({
           <span>{getOptionLabel(paymentMethodOptions, payment.payment_method_code)}</span>
         </div>
         <div className="flex justify-between font-bold text-base border-t pt-2 mt-2">
-          <span>Total</span>
-          <span className="text-green-700">${order.total_price?.toLocaleString()}</span>
+          <span>{pendingAction === 'charge' ? 'A cobrar' : 'Total'}</span>
+          <span className="text-green-700">
+            {pendingAction === 'charge'
+              ? formatCurrency(pendiente)
+              : `$${order.total_price?.toLocaleString()}`}
+          </span>
         </div>
       </div>
     </div>
@@ -381,7 +438,7 @@ function StepBillingForm({
   generateElectronicInvoice: boolean
   setGenerateElectronicInvoice: Dispatch<SetStateAction<boolean>>
 }) {
-  const showInvoiceToggle = pendingAction === 'complete'
+  const showInvoiceToggle = pendingAction === 'charge'
 
   return (
     <div className="space-y-4">
@@ -403,8 +460,8 @@ function StepBillingForm({
             <p className="text-sm font-semibold text-gray-800">Factura electrónica</p>
             <p className="text-xs text-gray-500 mt-0.5">
               {generateElectronicInvoice
-                ? 'Se generará factura al finalizar este pedido.'
-                : 'El pedido se finalizará sin emitir factura electrónica.'}
+                ? 'Se generará factura electrónica por este cobro.'
+                : 'El cobro se registrará sin emitir factura electrónica.'}
             </p>
           </div>
           <Switch
@@ -416,20 +473,13 @@ function StepBillingForm({
         </div>
       )}
 
-      {pendingAction === 'confirm' && (
-        <p className="text-sm text-gray-600">
-          Revisa los datos del pedido y confirma para pasarlo a preparación.
-        </p>
-      )}
-
       {showInvoiceToggle && !generateElectronicInvoice && (
         <p className="text-sm text-gray-500 rounded-lg border border-dashed p-3">
-          Puedes finalizar el pedido sin facturar. Activa el interruptor si necesitas emitir
-          factura electrónica.
+          Puedes cobrar sin facturar. Activa el interruptor si necesitas emitir factura electrónica.
         </p>
       )}
 
-      {(pendingAction === 'confirm' || generateElectronicInvoice) && (
+      {(pendingAction === 'charge' && generateElectronicInvoice) && (
         <>
       <div>
         <h4 className="text-sm font-semibold text-gray-800">Datos de facturación</h4>
@@ -649,11 +699,13 @@ function StepConfirmation({
         <Loader2 className="h-14 w-14 text-green-700 animate-spin mb-4" />
         <h4 className="text-lg font-semibold text-gray-800">Procesando...</h4>
         <p className="text-sm text-gray-500 mt-2 max-w-xs">
-          {pendingAction === 'complete'
+          {pendingAction === 'charge'
             ? generateElectronicInvoice
-              ? 'Validando factura electrónica y finalizando el pedido.'
-              : 'Finalizando el pedido sin factura electrónica.'
-            : 'Confirmando el pedido.'}
+              ? 'Validando factura y registrando el cobro.'
+              : 'Registrando el cobro parcial.'
+            : pendingAction === 'close'
+              ? 'Cerrando la mesa.'
+              : 'Confirmando la cuenta abierta.'}
         </p>
       </div>
     )
@@ -667,11 +719,13 @@ function StepConfirmation({
         </div>
         <h4 className="text-lg font-semibold text-gray-800">¡Listo!</h4>
         <p className="text-sm text-gray-500 mt-2">
-          {pendingAction === 'complete'
+          {pendingAction === 'charge'
             ? generateElectronicInvoice
-              ? 'La factura fue validada y el pedido quedó finalizado.'
-              : 'El pedido quedó finalizado sin factura electrónica.'
-            : 'El pedido fue confirmado correctamente.'}
+              ? 'Cobro registrado y factura generada.'
+              : 'Cobro registrado correctamente.'
+            : pendingAction === 'close'
+              ? 'La mesa fue cerrada.'
+              : 'La cuenta quedó abierta.'}
         </p>
       </div>
     )
@@ -748,25 +802,35 @@ function SheetFooter({
       {sheetStep === 1 && order && (
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500">Total a pagar</p>
+            <p className="text-xs text-gray-500">
+              {pendingAction === 'charge' ? 'A cobrar ahora' : 'Resumen'}
+            </p>
             <p className="text-xl font-bold text-gray-900">
-              ${order.total_price?.toLocaleString()}
+              {pendingAction === 'charge'
+                ? formatCurrency(getOrderTotals(order.products).pendiente)
+                : `$${order.total_price?.toLocaleString()}`}
             </p>
-            <p className="text-[10px] text-gray-400 truncate">
-              {getOptionLabel(paymentFormOptions, payment.payment_form)} ·{' '}
-              {getOptionLabel(paymentMethodOptions, payment.payment_method_code)}
-            </p>
+            {pendingAction === 'charge' && (
+              <p className="text-[10px] text-gray-400 truncate">
+                {getOptionLabel(paymentFormOptions, payment.payment_form)} ·{' '}
+                {getOptionLabel(paymentMethodOptions, payment.payment_method_code)}
+              </p>
+            )}
           </div>
           <Button
             className="flex-1 max-w-[160px] bg-green-700 hover:bg-green-800 text-white"
             onClick={onContinueStep1}
           >
-            Continuar
+            {pendingAction === 'confirm'
+              ? 'Confirmar'
+              : pendingAction === 'close'
+                ? 'Cerrar mesa'
+                : 'Continuar'}
           </Button>
         </div>
       )}
 
-      {sheetStep === 2 && (
+      {sheetStep === 2 && pendingAction === 'charge' && (
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={() => onClose()}>
             Cancelar
@@ -775,11 +839,7 @@ function SheetFooter({
             className="flex-1 bg-green-700 hover:bg-green-800 text-white"
             onClick={onContinueStep2}
           >
-            {pendingAction === 'complete'
-              ? generateElectronicInvoice
-                ? 'Generar factura'
-                : 'Finalizar sin factura'
-              : 'Confirmar pedido'}
+            {generateElectronicInvoice ? 'Cobrar y facturar' : 'Registrar cobro'}
           </Button>
         </div>
       )}
