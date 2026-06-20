@@ -5,9 +5,10 @@ import Status from '@/components/admin/Status'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
 import { CalendarDays, ChevronDown, RefreshCcw, ShoppingBag } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { DateRange } from 'react-day-picker'
 import {
+  extractOperationalDateFromResponse,
   formatOperationalDateRangeLabel,
   operationalDaysInclusive,
   parseOperationalDate,
@@ -179,6 +180,7 @@ function OrderPage() {
   const [dateFilterLabel, setDateFilterLabel] = useState('Hoy')
   const [queryDates, setQueryDates] = useState<{ startDate?: string; endDate?: string }>({})
   const [operationalToday, setOperationalToday] = useState<string | undefined>()
+  const operationalTodayRef = useRef<string | undefined>(undefined)
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false)
 
   const [page, setPage] = useState(1)
@@ -250,6 +252,7 @@ function OrderPage() {
     setDateRange(undefined)
     setQueryDates({})
     setOperationalToday(undefined)
+    operationalTodayRef.current = undefined
     setPage(1)
     setSelectOrden(null)
     void fetchData(1, {})
@@ -263,6 +266,12 @@ function OrderPage() {
     })
   }, [operationalToday, queryDates.startDate])
 
+  const syncOperationalToday = (date: string | undefined) => {
+    if (!date) return
+    operationalTodayRef.current = date
+    setOperationalToday(date)
+  }
+
   async function fetchData(
     newPage = 1,
     filters?: {
@@ -272,10 +281,10 @@ function OrderPage() {
   ) {
     setIsLoading(true);
     setError(null);
+    setListOrder([]);
 
     try {
       if (!company?.id) {
-        setListOrder([]);
         return;
       }
 
@@ -288,16 +297,18 @@ function OrderPage() {
         startDate,
         endDate,
       });
-      setListOrder(response.data);
-      setTotalPages(response.totalPages)
-      setPage(response.page)
 
-      if (response.operationalDate) {
-        setOperationalToday(response.operationalDate)
-      }
+      const orders = Array.isArray(response.data) ? response.data : []
+      setListOrder(orders);
+      setTotalPages(response.totalPages ?? 1)
+      setPage(response.page ?? newPage)
+
+      const resolvedOperationalDate = extractOperationalDateFromResponse(response)
+      syncOperationalToday(resolvedOperationalDate)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar las órdenes';
       setError(errorMessage);
+      setListOrder([]);
     } finally {
       setIsLoading(false);
     }
@@ -314,9 +325,9 @@ function OrderPage() {
     void fetchData(1, { startDate, endDate })
   }
 
-  const getReferenceOperationalDate = () => queryDates.endDate ?? operationalToday
+  const getReferenceOperationalDate = () => operationalTodayRef.current ?? operationalToday
 
-  const handlePresetSelect = (preset: DatePreset) => {
+  const handlePresetSelect = async (preset: DatePreset) => {
     if (preset.type === 'today') {
       setDateFilterLabel('Hoy')
       setDateRange(undefined)
@@ -326,7 +337,18 @@ function OrderPage() {
       return
     }
 
-    const referenceDate = getReferenceOperationalDate()
+    let referenceDate = getReferenceOperationalDate()
+
+    if (!referenceDate && company?.id) {
+      try {
+        const response = await getAllOrdersByCompany(company.id, { page: 1, limit: 1 })
+        referenceDate = extractOperationalDateFromResponse(response)
+        syncOperationalToday(referenceDate)
+      } catch {
+        // Se maneja abajo con toast
+      }
+    }
+
     if (!referenceDate) {
       toast.error('No se pudo determinar el día operativo actual. Intenta de nuevo.')
       return
@@ -338,23 +360,36 @@ function OrderPage() {
   }
 
   const handleCalendarSelect = (range: DateRange | undefined) => {
-    setDateRange(range)
-
-    if (!range?.from || !range?.to) return
-
-    const startDate = toOperationalDateString(range.from)
-    const endDate = toOperationalDateString(range.to)
-
-    if (operationalDaysInclusive(startDate, endDate) > MAX_DATE_RANGE_DAYS) {
-      toast.error(`El rango máximo permitido es de ${MAX_DATE_RANGE_DAYS} días`)
+    if (!range?.from) {
+      setDateRange(undefined)
       return
     }
 
-    applyDateFilter(
-      formatOperationalDateRangeLabel(startDate, endDate),
-      startDate,
-      endDate
-    )
+    const isWaitingForEndDate = Boolean(dateRange?.from && dateRange.to === undefined)
+
+    if (isWaitingForEndDate && dateRange?.from) {
+      const from = dateRange.from
+      const clicked = range.to ?? range.from
+      const start = from <= clicked ? from : clicked
+      const end = from <= clicked ? clicked : from
+      const startDate = toOperationalDateString(start)
+      const endDate = toOperationalDateString(end)
+
+      if (operationalDaysInclusive(startDate, endDate) > MAX_DATE_RANGE_DAYS) {
+        toast.error(`El rango máximo permitido es de ${MAX_DATE_RANGE_DAYS} días`)
+        setDateRange({ from, to: undefined })
+        return
+      }
+
+      applyDateFilter(
+        formatOperationalDateRangeLabel(startDate, endDate),
+        startDate,
+        endDate
+      )
+      return
+    }
+
+    setDateRange({ from: range.from, to: undefined })
   }
 
   const resetFactusForms = () => {

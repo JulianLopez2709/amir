@@ -9,6 +9,8 @@ export interface OrdenReques {
   totalPages: number
   /** Día operativo actual (YYYY-MM-DD). Lo resuelve el backend. */
   operationalDate?: string
+  appliedStartDate?: string
+  appliedEndDate?: string
   data: Order[]
 }
 

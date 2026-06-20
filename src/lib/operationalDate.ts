@@ -37,3 +37,25 @@ export function formatOperationalDateRangeLabel(from: string, to: string): strin
 export function operationalDaysInclusive(startDate: string, endDate: string): number {
   return differenceInCalendarDays(parseOperationalDate(endDate), parseOperationalDate(startDate)) + 1
 }
+
+type OperationalDateResponse = {
+  operationalDate?: string
+  operational_date?: string
+  appliedStartDate?: string
+  appliedEndDate?: string
+  applied_start_date?: string
+  applied_end_date?: string
+  startDate?: string
+  endDate?: string
+}
+
+/** Extrae el día operativo actual que devuelve el backend. */
+export function extractOperationalDateFromResponse(
+  response: OperationalDateResponse
+): string | undefined {
+  const operationalDate = response.operationalDate ?? response.operational_date
+  if (typeof operationalDate === 'string' && operationalDate.length > 0) {
+    return operationalDate
+  }
+  return undefined
+}
