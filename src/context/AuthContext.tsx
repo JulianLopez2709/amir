@@ -15,6 +15,12 @@ type Company = {
     numbering_range_id?: number;
     factus_numbering_range_id?: number;
     hasBilling?: boolean;
+    factusElectronicInvoicingConfigured?: boolean;
+    factusNumberingRangeId?: number | null;
+    factusPrefix?: string | null;
+    nit?: string;
+    phone?: string;
+    plan?: string;
 };
 
 type User = {
