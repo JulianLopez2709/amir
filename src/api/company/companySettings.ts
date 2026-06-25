@@ -1,5 +1,44 @@
-import type { CompanyFactusPublic, FactusCredentialsForm } from '@/@types/settings'
+import type {
+  CompanyFactusPublic,
+  CompanyProfile,
+  CompanyProfileForm,
+  FactusCredentialsForm,
+} from '@/@types/settings'
 import apiFetch from '../client'
+
+export type PatchFactusPayload = Partial<{
+  factusClientId: string
+  factusClientSecret: string
+  factusUsername: string
+  factusPassword: string
+  factusNumberingRangeId: number | string | null
+  factusPrefix: string | null
+}>
+
+export type PatchCompanyProfilePayload = Partial<CompanyProfileForm>
+
+export async function getCompanyProfile(companyId: number) {
+  return apiFetch<CompanyProfile>(`company/${companyId}/profile`)
+}
+
+export async function patchCompanyProfile(
+  companyId: number,
+  payload: PatchCompanyProfilePayload
+) {
+  return apiFetch<CompanyProfile>(`company/${companyId}/profile`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function uploadCompanyLogo(companyId: number, file: File) {
+  const formData = new FormData()
+  formData.append('logo', file)
+  return apiFetch<CompanyProfile>(`company/${companyId}/logo`, {
+    method: 'POST',
+    body: formData,
+  })
+}
 
 export type PatchFactusPayload = Partial<{
   factusClientId: string
