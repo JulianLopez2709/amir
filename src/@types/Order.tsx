@@ -22,6 +22,7 @@ export interface Order {
   updatedAt: string
   companyId: number
   number?: string | null
+  table?: string | null
   detail?: OrderDetail
   products: OrderProduct[]
 }
@@ -129,6 +130,7 @@ export interface CreateOrderBody {
       nombre: string
       telefono: string
     },
+    selectedTable?: string
     metodo_pago: string
     notas?: string
   },

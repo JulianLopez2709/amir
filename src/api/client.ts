@@ -17,7 +17,15 @@ export default async function apiFetch<T>(
   })
 
   if (!res.ok) {
-    throw new Error(`HTTP error! status: ${res.status}`)
+    let message = `HTTP error! status: ${res.status}`
+    try {
+      const body = await res.json()
+      if (body?.message) message = body.message
+      else if (body?.error) message = String(body.error)
+    } catch {
+      // ignore parse errors
+    }
+    throw new Error(message)
   }
 
   return res.json()
