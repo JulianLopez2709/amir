@@ -12,6 +12,7 @@ type Company = {
     available?: boolean;
     email?: string | null;
     address?: string | null;
+    numTable?: String | null;
     numbering_range_id?: number;
     factus_numbering_range_id?: number;
     hasBilling?: boolean;

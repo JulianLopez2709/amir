@@ -89,10 +89,10 @@ const CardOrder = ({ item, onClick, index, selectOrden, onComplete, onConfirm }:
             <div className='flex  justify-between items-center '>
                 <div className='flex gap-3'>
                     <div className='rounded-full size-10 bg-gray-100 flex items-center justify-center'>
-                        <p className='font-bold'>
-                            {
-                                user?.name.toUpperCase().slice(0, 2) || "CN"
-                            }
+                        <p className="font-bold">
+                            {item.table === "delivery"
+                                ? "🏍️"
+                                : item.table || "CN"}
                         </p>
                     </div>
                     <div>
