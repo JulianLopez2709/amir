@@ -54,7 +54,8 @@ export function getEmitterInfo(
 
 export function getNumberingRangeId(company: Record<string, unknown> | null | undefined): number {
   return Number(
-    company?.numbering_range_id ??
+    company?.factusNumberingRangeId ??
+      company?.numbering_range_id ??
       company?.factus_numbering_range_id ??
       company?.numberingRangeId ??
       0

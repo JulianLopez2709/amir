@@ -10,11 +10,18 @@ type Company = {
     primary_color: string;
     secondary_color: string;
     available?: boolean;
-    email?: string;
-    address?: string;
+    email?: string | null;
+    address?: string | null;
+    numTable?: String | null;
     numbering_range_id?: number;
     factus_numbering_range_id?: number;
     hasBilling?: boolean;
+    factusElectronicInvoicingConfigured?: boolean;
+    factusNumberingRangeId?: number | null;
+    factusPrefix?: string | null;
+    nit?: string | null;
+    phone?: string | null;
+    plan?: string;
 };
 
 type User = {
